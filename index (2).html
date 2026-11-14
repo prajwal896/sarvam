@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nidaan | Live merchant support</title>
+<style>
+  :root{
+    --bg:#0a1f3c; --card:#12294a; --card2:#183258; --line:#23406b;
+    --text:#eaf2ff; --muted:#9db4d6; --cyan:#00b4f0;
+    --green:#27c47d; --amber:#f5a524; --red:#f0596b; --blue:#4da3ff; --violet:#a78bfa;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.4}
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--line)}
+  .logo{font-weight:800;letter-spacing:.18em;font-size:22px}
+  .tag{color:var(--cyan);font-size:14px}
+  .spacer{flex:1}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+  .p-green{background:rgba(39,196,125,.15);color:var(--green);border-color:rgba(39,196,125,.4)}
+  .p-amber{background:rgba(245,165,36,.15);color:var(--amber);border-color:rgba(245,165,36,.4)}
+  .p-red{background:rgba(240,89,107,.15);color:var(--red);border-color:rgba(240,89,107,.4)}
+  .p-blue{background:rgba(77,163,255,.15);color:var(--blue);border-color:rgba(77,163,255,.4)}
+  .p-violet{background:rgba(167,139,250,.15);color:var(--violet);border-color:rgba(167,139,250,.4)}
+  .p-gray{background:rgba(157,180,214,.12);color:var(--muted);border-color:rgba(157,180,214,.3)}
+  .pulse{animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.45}}
+  main{padding:18px 22px 40px;max-width:1400px;margin:0 auto}
+  .banner{display:none;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(0,180,240,.25),rgba(0,180,240,.08));border:1px solid var(--cyan);border-radius:14px;padding:12px 16px;margin-bottom:16px}
+  .banner.on{display:flex}
+  .banner .dot{width:12px;height:12px;border-radius:50%;background:var(--cyan);animation:pulse 1s infinite}
+  .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+  .metric{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .metric .v{font-size:30px;font-weight:800}
+  .metric .l{color:var(--muted);font-size:13px}
+  .metric small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+  .metric input{width:56px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:1px 4px;font-size:11px}
+  .grid{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:16px;align-items:start}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .panel h2{margin:0 0 12px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+  .stack{display:flex;flex-direction:column;gap:16px}
+  .m{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;transition:box-shadow .3s}
+  .m.flash{box-shadow:0 0 0 2px var(--cyan)}
+  .m b{font-size:15px}
+  .m .sub{color:var(--muted);font-size:12px}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px;gap:8px}
+  .tl{max-height:560px;overflow:auto;padding-right:4px}
+  .ev{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .ev:last-child{border-bottom:none}
+  .ev.new{animation:slide .5s ease-out}
+  @keyframes slide{from{opacity:0;transform:translateY(-8px);background:rgba(0,180,240,.18)}to{opacity:1}}
+  .dotc{flex:0 0 10px;height:10px;border-radius:50%;margin-top:6px}
+  .ev .t{color:var(--muted);font-size:11px;white-space:nowrap}
+  .ev .a{font-weight:600;font-size:14px}
+  .ev .d{color:var(--muted);font-size:13px}
+  .empty{color:var(--muted);font-size:14px;padding:6px 0}
+  .btn{width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:12px 14px;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:8px}
+  .btn:hover{border-color:var(--cyan)}
+  .btn:disabled{opacity:.5;cursor:wait}
+  .btn.primary{background:var(--cyan);color:#04223d;font-weight:700;border-color:var(--cyan)}
+  .btn small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
+  .btn.primary small{color:#04365c}
+  .ho .k{color:var(--muted);font-size:12px;margin-top:10px;text-transform:uppercase;letter-spacing:.08em}
+  .ho ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+  .note{color:var(--muted);font-size:12px;margin-top:10px}
+  details{margin-top:6px}
+  summary{cursor:pointer;color:var(--cyan);font-size:13px;margin-bottom:6px}
+  .sc{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px}
+  .sc b{display:block;margin-bottom:4px}
+  .sc code{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px;word-break:break-word}
+  .sc ol{margin:6px 0 0;padding-left:18px}
+  .setup{display:none;background:rgba(240,89,107,.12);border:1px solid var(--red);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:14px}
+  .setup.on{display:block}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#04223d;border:1px solid var(--cyan);border-radius:10px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.on{opacity:1}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:10px 22px 28px}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">NIDAAN</div>
+  <div class="tag">Every merchant problem, solved with one call.</div>
+  <div class="spacer"></div>
+  <span id="conn" class="pill p-gray">Connecting…</span>
+</header>
+
+<main>
+  <div id="setup" class="setup"></div>
+
+  <div id="ring" class="banner">
+    <div class="dot"></div>
+    <div id="ringText" style="flex:1"></div>
+    <button class="btn" style="width:auto;margin:0;padding:6px 12px" onclick="sim('clear_ring')">Dismiss</button>
+  </div>
+
+  <section class="metrics">
+    <div class="metric"><div class="v" id="mCalls">0</div><div class="l">Calls handled</div></div>
+    <div class="metric"><div class="v" id="mAuto">–</div><div class="l">Resolved without a human</div></div>
+    <div class="metric"><div class="v" id="mEsc">0</div><div class="l">Handed to humans</div></div>
+    <div class="metric"><div class="v" id="mTime">–</div><div class="l">Avg time per call</div></div>
+    <div class="metric"><div class="v" id="mSaved">₹0</div><div class="l">Est. support cost saved</div>
+      <small>Estimate: assumes ₹<input id="cost" type="number" min="0" value="50"> per human-handled call</small></div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Merchants</h2>
+      <div id="merchants"><div class="empty">Loading…</div></div>
+      <div class="note">Prototype data: three demo merchants on a mock Paytm backend.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Live action timeline</h2>
+      <div id="timeline" class="tl"><div class="empty">Waiting for activity…</div></div>
+    </div>
+
+    <div class="stack">
+      <div class="panel">
+        <h2>Demo controls</h2>
+        <button class="btn primary" id="bOff" onclick="sim('offline','M002')">Simulate Soundbox offline<small>Sunita Tailors goes silent. Nidaan calls first.</small></button>
+        <button class="btn" id="bDelay" onclick="sim('delay','M001')">Simulate delayed settlement<small>Ramesh's ₹12,000 is stuck at the bank.</small></button>
+        <button class="btn" id="bReset" onclick="sim('reset')">Reset demo data<small>Clears events, handovers and bookings.</small></button>
+      </div>
+
+      <div class="panel ho">
+        <h2>Human handover</h2>
+        <div id="handover"><div class="empty">No escalations yet.</div></div>
+      </div>
+
+      <div class="panel">
+        <h2>Demo script</h2>
+        <details>
+          <summary>Variables to set in the Sarvam test panel</summary>
+          <div class="sc"><b>1. Merchant calls: delayed settlement</b>
+            <code>M001</code> <code>Ramesh</code> <code>Ramesh Kirana Store</code> <code>inbound</code> <code>merchant_called</code>
+            <ol><li>Click "Simulate delayed settlement"</li><li>Say: "Mera kal ka paisa abhi tak nahi aaya"</li></ol></div>
+          <div class="sc"><b>2. Nidaan calls first: Soundbox offline</b>
+            <code>M002</code> <code>Sunita</code> <code>Sunita Tailors</code> <code>outbound</code> <code>device_offline</code>
+            <ol><li>Click "Simulate Soundbox offline"</li><li>Start the call, Nidaan speaks first</li><li>Say yes, then agree to the technician slot</li></ol></div>
+          <div class="sc"><b>3. Complex case: human handover</b>
+            <code>M003</code> <code>Imran</code> <code>Imran Chai Point</code> <code>inbound</code> <code>merchant_called</code>
+            <ol><li>Say: "Mera settlement kyun ruka hua hai?"</li></ol></div>
+          <div class="note">Order of variables: merchant_id, merchant_name, shop_name, call_direction, trigger_reason.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Prototype for the Paytm Build for India AI Hackathon · Team Nexis · Merchant data is mocked for the demo</footer>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ---------- CONFIG: only edit this block ---------- */
+const CONFIG = {
+  N8N_BASE: 'https://paytm1.app.n8n.cloud/webhook',   // production webhook base, no trailing slash
+  POLL_MS: 2000
+};
+/* -------------------------------------------------- */
+
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = (n) => '₹' + Number(n).toLocaleString('en-IN');
+
+const LABELS = {
+  device_offline_detected: 'Soundbox offline detected',
+  outbound_call_started: 'Nidaan calls the merchant first',
+  settlement_delay_detected: 'Settlement delay detected',
+  call_connected: 'Call connected',
+  get_device_status: 'Device check',
+  get_settlement_status: 'Settlement check',
+  retry_settlement: 'Settlement retry',
+  check_technician_slots: 'Technician slots checked',
+  book_technician: 'Technician booked',
+  escalate_to_human: 'Handed to human team',
+  log_call: 'Call logged',
+  call_ended: 'Call ended'
+};
+const STATUS_COLOR = { ok: 'var(--green)', warn: 'var(--amber)', error: 'var(--red)', escalated: 'var(--violet)', log: 'var(--blue)' };
+
+/* ---------- pure render helpers ---------- */
+function devicePill(d) {
+  return d.status === 'offline' ? '<span class="pill p-red">Offline</span>' : '<span class="pill p-green">Online</span>';
+}
+function settlementPill(s) {
+  const map = {
+    delayed: ['p-amber', 'Delayed', ''],
+    processing: ['p-blue', 'Processing', ' pulse'],
+    settled: ['p-green', 'Settled', ''],
+    held_for_review: ['p-red', 'On hold (review)', '']
+  };
+  const x = map[s.status] || ['p-gray', s.status, ''];
+  return '<span class="pill ' + x[0] + x[2] + '">' + esc(x[1]) + '</span>';
+}
+function merchantHTML(m, flash) {
+  const tech = m.technician ? '<div class="row"><span>Technician</span><span class="pill p-green">' + esc(m.technician.date) + ' · ' + esc(m.technician.time) + '</span></div>' : '';
+  return '<div class="m' + (flash ? ' flash' : '') + '" id="m-' + esc(m.id) + '">' +
+    '<b>' + esc(m.shop) + '</b><div class="sub">' + esc(m.owner) + ' · ' + esc(m.city) + ' · ' + esc(m.id) + '</div>' +
+    '<div class="row"><span>Soundbox</span>' + devicePill(m.device) + '</div>' +
+    '<div class="row"><span>Settlement ' + esc(inr(m.settlement.amount)) + '</span>' + settlementPill(m.settlement) + '</div>' + tech + '</div>';
+}
+function timeStr(ts) { return new Date(ts).toLocaleTimeString('en-IN', { hour12: false }); }
+function eventHTML(e, isNew) {
+  const label = LABELS[e.action] || e.action;
+  return '<div class="ev' + (isNew ? ' new' : '') + '"><span class="dotc" style="background:' + (STATUS_COLOR[e.status] || 'var(--muted)') + '"></span>' +
+    '<div style="flex:1"><div class="a">' + esc(label) + '</div><div class="d">' + esc(e.detail) + '</div></div>' +
+    '<div class="t">' + esc(timeStr(e.ts)) + '</div></div>';
+}
+function handoverHTML(h) {
+  if (!h) return '<div class="empty">No escalations yet.</div>';
+  const urg = { high: 'p-red', medium: 'p-amber', low: 'p-gray' }[h.urgency] || 'p-amber';
+  const checked = String(h.checked || '').split(' > ').filter(Boolean).map(x => '<li>' + esc(x) + '</li>').join('') || '<li>–</li>';
+  return '<div><b>' + esc(h.shop) + '</b> <span class="pill ' + urg + '">' + esc(h.urgency) + ' priority</span>' +
+    '<div class="k">Issue</div><div>' + esc(h.issue) + '</div>' +
+    '<div class="k">Already checked by Nidaan</div><ul>' + checked + '</ul>' +
+    '<div class="k">Already tried</div><div>' + esc(h.tried) + '</div>' +
+    '<div class="note">The human agent sees this the moment the call is handed over, so the merchant never has to repeat the problem.</div></div>';
+}
+function metricsView(state, costPerCall) {
+  const mt = state.metrics || {};
+  const calls = mt.calls || 0;
+  const pct = calls ? Math.round((mt.auto_resolved / calls) * 100) + '%' : '–';
+  let time = '–';
+  if (typeof mt.avg_resolution_s === 'number' && calls) {
+    time = Math.floor(mt.avg_resolution_s / 60) + ':' + String(mt.avg_resolution_s % 60).padStart(2, '0');
+  }
+  return { calls, pct, esc: mt.escalated || 0, time, saved: inr((mt.auto_resolved || 0) * (Number(costPerCall) || 0)) };
+}
+function ringView(state) {
+  if (!state.ring) return null;
+  const m = (state.merchants || []).find(x => x.id === state.ring.merchant_id);
+  return 'Nidaan is calling ' + (m ? m.shop : state.ring.merchant_id) + ' now: Soundbox went offline. Start the call in the Sarvam test panel to answer as the merchant.';
+}
+
+/* ---------- app ---------- */
+const seen = new Set();
+const sig = {};
+let firstLoad = true;
+let clearedRing = null;
+
+function getCost() {
+  const v = Number(document.getElementById('cost').value);
+  return isNaN(v) ? 0 : v;
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 1800);
+}
+async function api(path, params) {
+  const u = new URL(CONFIG.N8N_BASE.replace(/\/$/, '') + '/' + path);
+  Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+  const r = await fetch(u.toString());
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+async function sim(action, merchant) {
+  const btns = document.querySelectorAll('.btn'); btns.forEach(b => b.disabled = true);
+  try {
+    const p = { fn: 'sim', action };
+    if (merchant) p.merchant_id = merchant;
+    await api('nidaan-sim', p);
+    if (action === 'reset') { seen.clear(); firstLoad = true; }
+    toast({ offline: 'Soundbox offline: Nidaan is placing the call', delay: 'Settlement delayed', reset: 'Demo data reset', clear_ring: 'Dismissed' }[action] || 'Done');
+    await refresh();
+  } catch (e) { toast('Could not reach n8n (' + e.message + ')'); }
+  btns.forEach(b => b.disabled = false);
+}
+function render(state) {
+  // merchants
+  const mEl = document.getElementById('merchants');
+  const html = (state.merchants || []).map(m => {
+    const s = JSON.stringify([m.device, m.settlement.status, m.settlement.amount, m.technician]);
+    const flash = sig[m.id] !== undefined && sig[m.id] !== s;
+    sig[m.id] = s;
+    return merchantHTML(m, flash);
+  }).join('');
+  mEl.innerHTML = html || '<div class="empty">No merchants.</div>';
+  setTimeout(() => document.querySelectorAll('.m.flash').forEach(x => x.classList.remove('flash')), 1200);
+
+  // timeline (newest first)
+  const evs = (state.events || []).slice().reverse();
+  const tEl = document.getElementById('timeline');
+  tEl.innerHTML = evs.length ? evs.map(e => {
+    const k = e.ts + '|' + e.action + '|' + e.merchant_id + '|' + e.detail;
+    const isNew = !firstLoad && !seen.has(k);
+    seen.add(k);
+    return eventHTML(e, isNew);
+  }).join('') : '<div class="empty">Waiting for activity…</div>';
+  firstLoad = false;
+
+  // handover
+  const hs = state.handovers || [];
+  document.getElementById('handover').innerHTML = handoverHTML(hs[hs.length - 1]);
+
+  // metrics
+  const mv = metricsView(state, getCost());
+  document.getElementById('mCalls').textContent = mv.calls;
+  document.getElementById('mAuto').textContent = mv.pct;
+  document.getElementById('mEsc').textContent = mv.esc;
+  document.getElementById('mTime').textContent = mv.time;
+  document.getElementById('mSaved').textContent = mv.saved;
+
+  // ring banner, auto-dismiss once the merchant's call shows real activity
+  const rt = ringView(state);
+  const ringEl = document.getElementById('ring');
+  if (rt && state.ring) {
+    const answered = evs.some(e => e.merchant_id === state.ring.merchant_id && e.ts > state.ring.ts && e.call_id !== 'sim');
+    if (answered && clearedRing !== state.ring.ts) {
+      clearedRing = state.ring.ts;
+      api('nidaan-sim', { fn: 'sim', action: 'clear_ring' }).catch(() => {});
+      ringEl.classList.remove('on');
+    } else if (!answered) {
+      document.getElementById('ringText').textContent = rt; ringEl.classList.add('on');
+    } else { ringEl.classList.remove('on'); }
+  } else { ringEl.classList.remove('on'); }
+}
+function setConn(ok, msg) {
+  const c = document.getElementById('conn');
+  c.className = 'pill ' + (ok ? 'p-green' : 'p-red');
+  c.textContent = msg;
+}
+async function refresh() {
+  try {
+    const state = await api('nidaan-state', { fn: 'state' });
+    render(state);
+    setConn(true, 'Live · ' + timeStr(Date.now()));
+    document.getElementById('setup').classList.remove('on');
+  } catch (e) {
+    setConn(false, 'Cannot reach n8n');
+    const s = document.getElementById('setup');
+    s.classList.add('on');
+    s.innerHTML = '<b>Cannot reach the Nidaan backend (' + esc(e.message) + ').</b> Check that the n8n workflow is <b>Active</b>, that N8N_BASE at the top of this file is the production webhook URL (it contains /webhook/, not /webhook-test/), and that the page is opened over https if n8n is https.';
+  }
+}
+try { const saved = localStorage.getItem('nidaan_cost'); if (saved) document.getElementById('cost').value = saved; } catch (e) {}
+document.getElementById('cost').addEventListener('input', () => {
+  try { localStorage.setItem('nidaan_cost', document.getElementById('cost').value); } catch (e) {}
+  refresh();
+});
+(async function loop() { await refresh(); setTimeout(loop, CONFIG.POLL_MS); })();
+</script>
+</body>
+</html>
