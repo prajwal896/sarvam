@@ -357,7 +357,7 @@ function setConn(ok, msg) { const c = $('conn'); c.className = 'pill ' + (ok ? '
 async function refresh() {
   if (busy) return; busy = true;
   try {
-    const state = await api('nidaan-state', { fn: 'state' });
+    const state = await api('', { fn: 'state' });
     lastState = state; fetchedAt = Date.now();
     render(state);
     setConn(true, 'Live · ' + timeStr(Date.now()));
