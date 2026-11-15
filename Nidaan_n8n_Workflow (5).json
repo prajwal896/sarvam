@@ -1,0 +1,273 @@
+{
+  "name": "Nidaan - Paytm Merchant Support (tools + dashboard API)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nidaan-tools",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "a304d5d2-6234-4a77-940a-cb8c864cfcb0",
+      "name": "Webhook Tools",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "5d9c29d0-2d16-427d-8b0e-387d54a24567"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "nidaan-state",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "d9445fe2-c5aa-4b93-ab2d-dd6d4c4a4eb5",
+      "name": "Webhook State",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "1c5b61f9-106a-4a36-b87e-7af2a6d688e0"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "nidaan-sim",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "e9fc02a6-4976-4360-843f-77a784c46745",
+      "name": "Webhook Sim",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        400
+      ],
+      "webhookId": "9761d780-373a-4453-b20c-38a3bc551986"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nidaan Engine: one Code node that runs the tools, the demo simulator and the dashboard state.\n// Data lives in workflow static data, so the workflow must be ACTIVE and use production webhook URLs.\nconst S = $getWorkflowStaticData('global');\nconst IST_MS = 5.5 * 3600 * 1000;\nconst NOW = Date.now();\nconst AUTO_RETRY_LIMIT = 25000; // settlements above this always go to a human\n\nfunction seed() {\n  return {\n    merchants: {\n      M001: { id: 'M001', shop: 'Ramesh Kirana Store', owner: 'Ramesh', city: 'Pimpri', last4: '4821', daily_sales: 28000,\n        device: { status: 'online', last_seen_min: 1, note: 'Working normally' },\n        settlement: { amount: 12000, status: 'delayed', reason: 'Delayed at the bank', retry_ts: null }, technician: null },\n      M002: { id: 'M002', shop: 'Sunita Tailors', owner: 'Sunita', city: 'Wakad', last4: '3376', daily_sales: 32000,\n        device: { status: 'online', last_seen_min: 1, note: 'Working normally' },\n        settlement: { amount: 8500, status: 'settled', reason: null, retry_ts: null }, technician: null },\n      M003: { id: 'M003', shop: 'Imran Chai Point', owner: 'Imran', city: 'Chinchwad', last4: '9054', daily_sales: 45000,\n        device: { status: 'online', last_seen_min: 1, note: 'Working normally' },\n        settlement: { amount: 48000, status: 'held_for_review', reason: 'Flagged for risk review', retry_ts: null }, technician: null }\n    },\n    fleet: [\n      { id: 'F101', shop: 'Gupta Medical', city: 'Pimpri', daily_sales: 21000, offline: false, since: null },\n      { id: 'F102', shop: 'Patil Bakery', city: 'Chinchwad', daily_sales: 15500, offline: false, since: null },\n      { id: 'F103', shop: 'Shree Mobile', city: 'Akurdi', daily_sales: 12800, offline: false, since: null },\n      { id: 'F104', shop: 'Khan Chicken Centre', city: 'Bhosari', daily_sales: 9400, offline: false, since: null },\n      { id: 'F105', shop: 'Joshi Stationers', city: 'Nigdi', daily_sales: 6200, offline: false, since: null }\n    ],\n    caller: 'M001', approvals: [], messages: [], session: {},\n    events: [], handovers: [], bookings: [], ring: null, calls: {}\n  };\n}\nif (!S.nidaan || !S.nidaan.merchants || !S.nidaan.fleet) S.nidaan = seed();\nlet st = S.nidaan;\n\nfunction tick() {\n  Object.values(st.merchants).forEach(m => {\n    const s = m.settlement;\n    if (s.status === 'processing' && s.retry_ts && NOW - s.retry_ts > 30000) s.status = 'settled'; // demo: lands after 30s\n  });\n  if (st.ring && NOW - st.ring.ts > 180000) st.ring = null;\n}\nfunction addEvent(callId, mid, action, detail, status, extra) {\n  st.events.push(Object.assign({ ts: NOW, call_id: callId || '-', merchant_id: mid || '-', action, detail, status: status || 'ok' }, extra || {}));\n  if (st.events.length > 300) st.events = st.events.slice(-300);\n  if (callId && callId !== '-' && !st.calls[callId]) st.calls[callId] = NOW;\n}\nconst respond = (obj) => ({ route: 'respond', response: obj });\nconst money = (n) => '₹' + Number(n).toLocaleString('en-IN');\n\nfunction transcriptText(t) {\n  if (!t) return '';\n  if (typeof t === 'string') return t;\n  if (Array.isArray(t)) return t.map(x => (x && (x.content || x.text)) || JSON.stringify(x)).join('\\n');\n  return JSON.stringify(t);\n}\nconst squash = (s) => String(s || '').replace(/(\\d)[\\s\\-,.]+(?=\\d)/g, '$1');\nconst callEvents = (callId) => st.events.filter(e => e.call_id === callId && e.action !== 'log_call' && !/^(call_|sim)/.test(e.action));\n\nfunction handleTool(body) {\n  const args = body.args || {};\n  const call = body.call || {};\n  const dv = call.retell_llm_dynamic_variables || {};\n  const tt = transcriptText(call.transcript);\n  const fn = body.name;\n  const mid = String(args.merchant_id || dv.merchant_id || '').toUpperCase();\n  const m = st.merchants[mid];\n  st.session = st.session || {};\n  // If the platform sends no call id, group events per merchant until that merchant's call is logged.\n  const callId = call.call_id || ('auto-' + mid + '-' + (st.session[mid] || 0));\n  const say = (obj, text) => respond(Object.assign({ say: text }, obj));\n\n  if (fn === 'log_call') {\n    const evs = callEvents(callId);\n    let outcome = args.outcome;\n    if (!outcome) {\n      const has = (a, re) => evs.some(e => e.action === a && (!re || re.test(e.detail)));\n      outcome = has('escalate_to_human') ? 'escalated'\n        : has('book_technician') ? 'technician_booked'\n        : has('retry_settlement', /^Retried/) ? 'resolved_auto' : 'info_only';\n    }\n    const summary = args.summary || evs.slice(0, 5).map(e => e.detail).join(' > ') || 'Call completed';\n    const started = st.calls[callId];\n    const dur = started ? Math.round((NOW - started) / 1000) : null;\n    addEvent(callId, mid, 'log_call', outcome + ': ' + summary, 'log', { outcome, duration_s: dur });\n    st.session[mid] = (st.session[mid] || 0) + 1;\n    return say({ logged: true, outcome }, 'Call logged. You can end the call now with a warm goodbye.');\n  }\n  if (fn === 'get_call_context' || fn === 'get_outbound_context') {\n    const outbound = fn === 'get_outbound_context';\n    const cid = outbound ? (st.ring ? st.ring.merchant_id : 'M002') : st.caller;\n    const cm = st.merchants[cid];\n    const reason = outbound ? (st.ring ? st.ring.reason : 'device_offline') : 'merchant_called';\n    const cCall = call.call_id || ('auto-' + cid + '-' + (st.session[cid] || 0));\n    addEvent(cCall, cid, 'call_connected', outbound ? cm.owner + ' answered the call from Nidaan' : cm.owner + ' called Nidaan', 'ok');\n    if (outbound) st.ring = null;\n    return say({ merchant_id: cid, merchant_name: cm.owner, shop_name: cm.shop, call_direction: outbound ? 'outbound' : 'inbound', trigger_reason: reason },\n      'Call context loaded. The merchant is ' + cm.owner + ' of ' + cm.shop + '. ' + (outbound ? 'You called them because: ' + reason + '.' : 'The merchant called you. Wait for them to describe the problem.'));\n  }\n  if (!m) { addEvent(callId, mid, fn, 'Unknown merchant id', 'error'); return say({ success: false, error: 'merchant_not_found' }, 'Could not find this merchant. Apologise briefly and hand over to the human team.'); }\n\n  switch (fn) {\n    case 'verify_merchant': {\n      let ok;\n      if (args.last4) ok = String(args.last4).replace(/\\D/g, '').slice(-4) === m.last4;\n      else ok = squash(tt).includes(m.last4);\n      addEvent(callId, mid, fn, ok ? 'Merchant identity verified' : 'Verification failed (digits not matched)', ok ? 'ok' : 'warn');\n      return say({ verified: ok, merchant_name: ok ? m.owner : null },\n        ok ? 'Identity verified. Continue helping the merchant.'\n           : 'Verification failed. Ask for the last four digits of the registered mobile once more. If it fails again, hand over to a human and share no account details.');\n    }\n    case 'get_device_status': {\n      const d = m.device;\n      addEvent(callId, mid, fn, d.status === 'offline' ? 'Soundbox OFFLINE (last seen ' + d.last_seen_min + ' min ago)' : 'Soundbox online', d.status === 'offline' ? 'warn' : 'ok');\n      return say({ device_status: d.status, last_seen_minutes_ago: d.last_seen_min, note: d.note, technician_already_booked: m.technician },\n        d.status === 'offline'\n          ? 'Soundbox is OFFLINE, last seen about ' + d.last_seen_min + ' minutes ago (' + d.note + '). Ask once if it is charged and switched on; if it stays silent, offer a technician visit.'\n          : 'Soundbox shows ONLINE and working normally. Ask what exactly is wrong; if the problem continues, offer a technician visit.');\n    }\n    case 'get_settlement_status': {\n      const s = m.settlement;\n      const needsHuman = s.status === 'held_for_review' || s.amount > AUTO_RETRY_LIMIT;\n      addEvent(callId, mid, fn, money(s.amount) + ' settlement: ' + s.status.replace(/_/g, ' '), s.status === 'settled' || s.status === 'processing' ? 'ok' : 'warn');\n      const txt = { delayed: 'delayed at the bank. It can be retried now.', processing: 'already being processed and should reach the bank account by tonight.', settled: 'already paid out to the bank account.', held_for_review: 'on hold for a risk review. Do not retry. Hand over to the human team.' }[s.status] || s.status;\n      return say({ amount_rupees: s.amount, status: s.status, reason: s.reason, retry_allowed: s.status === 'delayed' && !needsHuman, requires_human: needsHuman },\n        'Settlement of ' + s.amount + ' rupees is ' + txt);\n    }\n    case 'retry_settlement': {\n      const s = m.settlement;\n      if (s.status === 'delayed' && s.amount <= AUTO_RETRY_LIMIT) {\n        s.status = 'processing'; s.retry_ts = NOW;\n        addEvent(callId, mid, fn, 'Retried ' + money(s.amount) + ' settlement, now processing', 'ok');\n        return say({ success: true, status: 'processing', amount_rupees: s.amount, expected: 'by tonight' },\n          'Retry done for ' + s.amount + ' rupees. It is now processing and should reach the bank account by tonight. Confirm this to the merchant.');\n      }\n      if (s.status === 'processing') return say({ success: false, status: 'processing' }, 'Settlement is already processing and should arrive by tonight. Tell the merchant no retry is needed.');\n      if (s.status === 'settled') return say({ success: false, status: 'settled' }, 'Settlement is already paid out. Nothing to retry.');\n      addEvent(callId, mid, fn, 'Retry blocked, needs human review', 'warn');\n      return say({ success: false, requires_human: true }, 'This settlement cannot be retried automatically. Hand over to the human team.');\n    }\n    case 'check_technician_slots': {\n      const date = new Date(NOW + IST_MS + 86400000).toISOString().slice(0, 10);\n      const slots = ['11:00', '15:00', '18:00'].filter(t => !st.bookings.some(b => b.date === date && b.time === t));\n      addEvent(callId, mid, fn, 'Slots for tomorrow: ' + (slots.join(', ') || 'none'), 'ok');\n      return say({ date, available_slots: slots },\n        slots.length ? 'Earliest technician slot is tomorrow (' + date + ') at ' + slots[0] + '. Offer this slot to the merchant and book it if they agree.'\n                     : 'No technician slots are free tomorrow. Hand over to the human team.');\n    }\n    case 'book_technician': {\n      let date = String(args.date || ''), time = String(args.time || '');\n      if (!date || !time) {\n        date = new Date(NOW + IST_MS + 86400000).toISOString().slice(0, 10);\n        time = ['11:00', '15:00', '18:00'].find(t => !st.bookings.some(b => b.date === date && b.time === t)) || '';\n      }\n      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !/^\\d{2}:\\d{2}$/.test(time)) return say({ success: false }, 'Booking failed because no valid slot was found. Hand over to the human team.');\n      if (st.bookings.some(b => b.date === date && b.time === time)) return say({ success: false, message: 'slot_taken' }, 'That slot is taken. Call check_technician_slots again.');\n      const id = 'TK' + (1001 + st.bookings.length);\n      st.bookings.push({ id, merchant_id: mid, date, time });\n      m.technician = { id, date, time };\n      addEvent(callId, mid, fn, 'Technician booked for ' + date + ' at ' + time, 'ok');\n      const start = new Date(date + 'T' + time + ':00+05:30');\n      const end = new Date(start.getTime() + 30 * 60000);\n      return {\n        route: 'book',\n        response: { say: 'Technician booked for tomorrow (' + date + ') at ' + time + '. Booking id ' + id + '. Confirm the day and time to the merchant.', success: true, booking_id: id, date, time },\n        calendar: {\n          summary: 'Soundbox repair: ' + m.shop,\n          description: 'Merchant: ' + m.owner + ' (' + mid + ')\\nIssue: ' + (args.issue || 'Soundbox offline') + '\\nBooked by Nidaan (AI)',\n          start: start.toISOString(), end: end.toISOString()\n        }\n      };\n    }\n    case 'escalate_to_human': {\n      const evs = callEvents(callId);\n      const s = m.settlement;\n      const has2 = (a) => evs.some(e => e.action === a);\n      const REASONS = {\n        amount_dispute: 'Merchant disputes the settlement amount. The system shows ' + money(s.amount) + ', but the merchant says it is different.',\n        schedule_change: 'Merchant cannot take the technician slot Nidaan offered and wants a different time.',\n        fraud_or_angry: 'Merchant reported suspected fraud, is upset, or asked to speak to a person.'\n      };\n      let reasonText, reasonSource;\n      if (s.status === 'held_for_review') { reasonText = money(s.amount) + ' settlement is on a risk-review hold, so it needs a human decision. Nidaan cannot retry it.'; reasonSource = 'system'; }\n      else if (REASONS[args.reason]) { reasonText = REASONS[args.reason]; reasonSource = 'agent'; }\n      else {\n        reasonSource = 'inferred';\n        reasonText = has2('check_technician_slots') && !has2('book_technician') ? 'A technician slot was offered but not booked.'\n          : has2('get_settlement_status') && !has2('retry_settlement') ? 'The settlement could not be fixed automatically.'\n          : 'Merchant needs help beyond the automated tools.';\n      }\n      const issue = args.issue || reasonText;\n      const checked = args.checked || evs.map(e => e.detail).join(' > ') || 'Nothing checked yet';\n      const tried = args.tried || (evs.filter(e => /^(Retried|Technician)/.test(e.detail)).map(e => e.detail).join(', ') || 'No automatic action taken');\n      const tail = tt.slice(-300);\n      st.handovers.push({ ts: NOW, call_id: callId, merchant_id: mid, shop: m.shop, owner: m.owner, issue, reason: reasonText, reason_source: reasonSource, checked, tried, urgency: args.urgency || (s.amount > AUTO_RETRY_LIMIT ? 'high' : 'medium'), transcript_tail: tail });\n      if (st.handovers.length > 20) st.handovers = st.handovers.slice(-20);\n      const needsApproval = s.status === 'held_for_review';\n      if (needsApproval && !st.approvals.some(a => a.merchant_id === mid && a.status === 'pending')) {\n        st.approvals.push({ id: 'AP' + (101 + st.approvals.length), merchant_id: mid, shop: m.shop, owner: m.owner, amount: s.amount, status: 'pending', ts: NOW });\n      }\n      st.handovers[st.handovers.length - 1].needs_approval = needsApproval;\n      addEvent(callId, mid, fn, 'Handed to human team: ' + issue, 'escalated');\n      return say({ success: true }, 'Handed over to the human team with a full summary. Tell the merchant a senior team member will call back soon and they will not need to repeat anything.');\n    }\n    default:\n      return say({ success: false, error: 'unknown_function' }, 'This action is not available. Hand over to the human team.');\n  }\n}\n\nfunction handleSim(q) {\n  const a = q.action;\n  const mid = String(q.merchant_id || '').toUpperCase();\n  if (a === 'reset') { S.nidaan = seed(); st = S.nidaan; return respond({ ok: true }); }\n  if (a === 'clear_ring') { st.ring = null; return respond({ ok: true }); }\n  if (a === 'set_caller') { if (st.merchants[mid]) st.caller = mid; return respond({ ok: true, caller: st.caller }); }\n  if (a === 'approve') {\n    const ap = st.approvals.find(x => x.merchant_id === mid && x.status === 'pending');\n    const m = st.merchants[mid];\n    if (!ap || !m) return respond({ ok: false, error: 'nothing_to_approve' });\n    ap.status = 'approved';\n    m.settlement.status = 'processing'; m.settlement.retry_ts = NOW;\n    addEvent('human', mid, 'human_approved', 'Human approved the retry of ' + money(ap.amount), 'ok');\n    st.messages.push({ ts: NOW, merchant_id: mid, shop: m.shop, channel: 'SMS and WhatsApp (simulated)', text: 'Namaste ' + m.owner + ' ji, your ' + money(ap.amount) + ' settlement has been approved by our team and will reach your bank account by tonight. - Nidaan, Paytm' });\n    return respond({ ok: true });\n  }\n  if (a === 'offline') {\n    const id = mid || 'M002'; const m = st.merchants[id]; if (!m) return respond({ ok: false });\n    m.device = { status: 'offline', last_seen_min: 180, note: 'No network for about three hours', since_ts: NOW - 180 * 60000 };\n    [95, 70, 55, 40, 25].forEach((mins, i) => { st.fleet[i].offline = true; st.fleet[i].since = NOW - mins * 60000; });\n    addEvent('sim', id, 'outage_wave_detected', 'Monitoring: ' + (1 + st.fleet.length) + ' Soundboxes offline, ranked by money at risk', 'warn');\n    st.ring = { active: true, merchant_id: id, reason: 'device_offline', ts: NOW };\n    addEvent('sim', id, 'device_offline_detected', m.shop + ': Soundbox went OFFLINE', 'warn');\n    addEvent('sim', id, 'outbound_call_started', 'Nidaan is calling the merchant first', 'ok');\n    return respond({ ok: true });\n  }\n  if (a === 'delay') {\n    const id = mid || 'M001'; const m = st.merchants[id]; if (!m) return respond({ ok: false });\n    m.settlement = { amount: 12000, status: 'delayed', reason: 'Delayed at the bank', retry_ts: null };\n    addEvent('sim', id, 'settlement_delay_detected', m.shop + ': ' + money(12000) + ' settlement delayed', 'warn');\n    return respond({ ok: true });\n  }\n  if (a === 'call_started') {\n    const id = mid || '-'; const cid = q.call_id || ('web-' + NOW);\n    st.calls[cid] = NOW;\n    if (q.direction === 'outbound') st.ring = null;\n    addEvent(cid, id, 'call_connected', (q.direction === 'outbound' ? 'Merchant answered Nidaan' : 'Merchant called Nidaan'), 'ok');\n    return respond({ ok: true });\n  }\n  if (a === 'call_ended') {\n    addEvent(q.call_id || '-', mid || '-', 'call_ended', 'Call ended', 'ok');\n    return respond({ ok: true });\n  }\n  return respond({ ok: false, error: 'unknown_action' });\n}\n\nfunction handleState() {\n  const logs = st.events.filter(e => e.action === 'log_call');\n  const by = o => logs.filter(l => l.outcome === o).length;\n  const durs = logs.map(l => l.duration_s).filter(n => typeof n === 'number');\n  const metrics = {\n    calls: logs.length,\n    auto_resolved: by('resolved_auto') + by('technician_booked'),\n    escalated: by('escalated'),\n    avg_resolution_s: durs.length ? Math.round(durs.reduce((x, y) => x + y, 0) / durs.length) : null\n  };\n  const queue = [];\n  Object.values(st.merchants).forEach(m => { if (m.device.status === 'offline') queue.push({ id: m.id, shop: m.shop, city: m.city, daily_sales: m.daily_sales, since: m.device.since_ts || (NOW - m.device.last_seen_min * 60000), fixed: !!m.technician, calling: !!st.ring && st.ring.merchant_id === m.id, kind: 'live' }); });\n  st.fleet.forEach(f => { if (f.offline) queue.push({ id: f.id, shop: f.shop, city: f.city, daily_sales: f.daily_sales, since: f.since, fixed: false, calling: false, kind: 'fleet' }); });\n  return respond({ server_time: NOW, merchants: Object.values(st.merchants), events: st.events.slice(-80), handovers: st.handovers.slice(-5), metrics, ring: st.ring,\n    caller: st.caller, queue, approvals: st.approvals.filter(a => a.status === 'pending'), messages: st.messages.slice(-5) });\n}\n\ntick();\nconst inp = $input.first().json;\nconst body = inp.body || {};\nconst q = inp.query || {};\nlet out;\nif (body.name && body.args !== undefined) out = handleTool(body);\nelse if (q.name) out = handleTool({ name: q.name, args: { merchant_id: q.merchant_id, last4: q.last4, date: q.date, time: q.time, issue: q.issue, reason: q.reason, outcome: q.outcome, summary: q.summary }, call: { call_id: q.call_id, transcript: q.transcript } });\nelse if (q.fn === 'sim') out = handleSim(q);\nelse out = handleState();\ntick();\nreturn [{ json: out }];\n"
+      },
+      "id": "614897e6-4da0-4833-ac8c-24b560a42f22",
+      "name": "Nidaan Engine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.route }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "book",
+                    "id": "e2998b3e-4552-4367-bec1-8509e5ccf44f"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "book"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "21779b8e-34e9-458b-bf5a-95c70bcd8bf3",
+      "name": "Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        560,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "primary"
+        },
+        "start": "={{ $json.calendar.start }}",
+        "end": "={{ $json.calendar.end }}",
+        "additionalFields": {
+          "summary": "={{ $json.calendar.summary }}",
+          "description": "={{ $json.calendar.description }}"
+        }
+      },
+      "id": "64c7ede1-a2e7-470d-af8e-2fceaa12774f",
+      "name": "Create Technician Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        820,
+        100
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $('Nidaan Engine').first().json.response }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "9cd5d9d0-da15-487b-b4d8-db5acf675737",
+      "name": "Respond Booking",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.response }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "61672bc7-295f-45d0-b3a8-d283efd237ad",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        820,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Tools": {
+      "main": [
+        [
+          {
+            "node": "Nidaan Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook State": {
+      "main": [
+        [
+          {
+            "node": "Nidaan Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Sim": {
+      "main": [
+        [
+          {
+            "node": "Nidaan Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nidaan Engine": {
+      "main": [
+        [
+          {
+            "node": "Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route": {
+      "main": [
+        [
+          {
+            "node": "Create Technician Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Technician Event": {
+      "main": [
+        [
+          {
+            "node": "Respond Booking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
