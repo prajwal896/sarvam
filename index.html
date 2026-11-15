@@ -7,8 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--paper:#EDF2F6;--card:#fff;--ink:#0E2236;--mute:#56697C;--line:#CBD6E0;--blue:#0B4FB8;--cyan:#00B9F1;--green:#1B7F55;--amber:#A8620A;--red:#B8283C;
---d:'Fraunces',Georgia,'Times New Roman',serif;--b:'Source Serif 4',Georgia,'Times New Roman',serif}
+:root{--paper:#EDF2F6;--card:#fff;--ink:#0E2236;--mute:#56697C;--line:#CBD6E0;--blue:#0B4FB8;--cyan:#00B9F1;--green:#1B7F55;--amber:#A8620A;--red:#B8283C;--d:'Fraunces',Georgia,'Times New Roman',serif;--b:'Source Serif 4',Georgia,'Times New Roman',serif}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 var(--b)}
 h1,h2,h3,.big{font-family:var(--d);font-weight:700;margin:0}
@@ -21,9 +20,12 @@ header p{margin:0;color:#BFD3E6;flex:1}
 .chip.ok{border-color:#58D39B;color:#58D39B}.chip.bad{border-color:#FF8A99;color:#FF8A99}
 main{max-width:1300px;margin:0 auto;padding:22px 28px 40px}
 .pick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.more{margin-top:14px;grid-template-columns:repeat(4,1fr)}
 .sc{background:var(--card);border:2px solid var(--line);border-radius:6px;padding:14px 16px;text-align:left;color:var(--ink)}
 .sc:hover{border-color:var(--blue)}.sc.on{border-color:var(--blue);background:#E8F0FD}
 .sc h3{font-size:19px}.sc span{display:block;color:var(--mute);font-size:15px;margin-top:2px}
+.alert{display:none;background:#FDF0F2;border:1px solid var(--red);border-left:8px solid var(--red);padding:12px 16px;margin:18px 0;border-radius:0 6px 6px 0;color:var(--ink)}
+.alert.show{display:block}
 .now{margin:18px 0;background:var(--card);border-left:8px solid var(--cyan);padding:16px 22px;border-radius:0 6px 6px 0}
 .now .big{font-size:28px;line-height:1.2}.now p{margin:6px 0 0;color:var(--mute)}
 .now .next{color:var(--blue);font-weight:600}
@@ -38,6 +40,7 @@ main{max-width:1300px;margin:0 auto;padding:22px 28px 40px}
 .q{margin-top:18px}.q h3{font-size:18px}
 .qr{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
 .qr b{font-family:var(--d);color:var(--red);white-space:nowrap}
+.qr small{display:block;color:var(--mute);margin-top:4px}
 .tl{max-height:520px;overflow:auto}
 .ev{padding:9px 0 9px 14px;border-left:4px solid var(--line);margin-left:4px}
 .ev+.ev{margin-top:4px}.ev.ok{border-color:var(--green)}.ev.warn{border-color:var(--amber)}.ev.escalated,.ev.error{border-color:var(--red)}.ev.log{border-color:var(--blue)}
@@ -52,7 +55,7 @@ ul{margin:4px 0 10px;padding-left:20px}
 .err{display:none;background:#FDF0F2;border:1px solid var(--red);padding:12px 16px;margin-bottom:14px;border-radius:6px}.err.on{display:block}
 .tools{margin-top:18px;font-size:14px;color:var(--mute)}.tools button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;color:var(--mute)}
 footer{text-align:center;color:var(--mute);font-size:14px;padding:0 20px 26px}
-@media(max-width:1000px){.pick,.grid{grid-template-columns:1fr}}
+@media(max-width:1000px){.pick,.more,.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:no-preference){.ev.fresh{animation:f .6s}@keyframes f{from{background:#DDF3FB}}}
 </style>
 </head>
@@ -65,13 +68,21 @@ footer{text-align:center;color:var(--mute);font-size:14px;padding:0 20px 26px}
 <button class="sc" id="s2" onclick="pick(2)"><h3>2. Nidaan calls first: Soundbox offline</h3><span>Sunita Tailors. Nidaan finds the fault and books a technician.</span></button>
 <button class="sc" id="s3" onclick="pick(3)"><h3>3. Risky case: a human decides</h3><span>Imran Chai Point. Nidaan hands over and says why.</span></button>
 </div>
+<div class="pick more" aria-label="More situations">
+<button class="sc" id="s4" onclick="more(4)"><h3>Low battery warning</h3><span>Reset, then simulate a low-battery merchant.</span></button>
+<button class="sc" id="s5" onclick="more(5)"><h3>After the technician visit</h3><span>Simulate the follow-up after a repair.</span></button>
+<button class="sc" id="s6" onclick="more(6)"><h3>Many Soundboxes offline in one area</h3><span>Reset, then show a multi-shop outage.</span></button>
+<button class="sc" id="s7" onclick="more(7)"><h3>Pretend it is lunch rush</h3><span>Toggle rush-hour mode.</span></button>
+</div>
 <div class="now" aria-live="polite"><div class="big" id="nowT">Pick a story above to begin.</div><p id="nowD"></p><p class="next" id="nowN"></p></div>
 <div class="stats"><div><b id="k1">0</b>calls handled</div><div><b id="k2">0</b>fixed without a human</div><div><b id="k3">0</b>handed to a human</div></div>
+<div id="alert" class="alert" role="alert" aria-live="polite"></div>
 <div class="grid">
 <section class="col"><h2>The merchant</h2><div class="sub">Simulated Paytm data, for the demo only</div><div id="mer"></div>
 <div class="q" id="queue" hidden><h3>Soundboxes offline, most money at risk first</h3><div class="sub">Nidaan's ops queue. Rupees at risk keep growing.</div><div id="qrows"></div></div></section>
 <section class="col"><h2>What Nidaan did</h2><div class="sub">Every action, newest first</div><div class="tl" id="tl"><div class="empty">Nothing yet.</div></div></section>
-<section class="col"><h2>Human team</h2><div class="sub">Only called in when Nidaan should not decide alone</div><div id="ho"><div class="empty">No handover yet. That is fine: Nidaan fixes most cases alone.</div></div><div id="msgs"></div></section>
+<section class="col"><h2>Human team</h2><div class="sub">Only called in when Nidaan should not decide alone</div><div id="ho"><div class="empty">No handover yet. That is fine: Nidaan fixes most cases alone.</div></div>
+<div id="msgs"></div></section>
 </div>
 <div class="tools"><button onclick="act(()=>sim('reset'))">Reset demo data</button> <span id="poll"></span></div>
 </main>
@@ -81,8 +92,8 @@ const CONFIG={N8N_BASE:'https://paytm3.app.n8n.cloud/webhook'};
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const R=n=>'₹'+Math.round(n).toLocaleString('en-IN');
 const $=id=>document.getElementById(id);
-const LAB={call_connected:'Call connected',get_device_status:'Checked the Soundbox',get_settlement_status:'Checked the settlement',retry_settlement:'Retried the settlement',check_technician_slots:'Looked for technician slots',book_technician:'Technician booked',escalate_to_human:'Handed to the human team',log_call:'Call logged',call_ended:'Call ended',human_approved:'Human approved',outage_wave_detected:'Outage detected',device_offline_detected:'Soundbox went offline',outbound_call_started:'Nidaan is calling the merchant',settlement_delay_detected:'Settlement delay detected'};
-const SC={1:{id:'M001',next:'In Sarvam, open Nidaan Inbound, press Test agent and say: "Mera kal ka paisa nahi aaya."'},2:{id:'M002',next:'In Sarvam, open Nidaan Proactive and press Test agent. Nidaan speaks first.'},3:{id:'M003',next:'In Sarvam, open Nidaan Inbound, press Test agent and say: "Mera settlement kyun ruka hua hai?"'}};
+const LAB={call_connected:'Call connected',get_device_status:'Checked the Soundbox',get_settlement_status:'Checked the settlement',retry_settlement:'Retried the settlement',check_technician_slots:'Looked for technician slots',book_technician:'Booked a technician',escalate_to_human:'Handed to the human team',log_call:'Call logged',call_ended:'Call ended',human_approved:'Human approved',outage_detected:'Outage detected',device_offline_detected:'Soundbox offline detected',low_battery_detected:'Low battery detected',followup_due:'Follow up after the visit',area_outage_detected:'Area outage detected',peak_mode:'Shop rush hour',outbound_call_started:'Nidaan is calling the merchant'};
+const SC={1:{id:'M001',next:'In Sarvam, open Nidaan Inbound, press Test agent and say: "Mera kal ka paisa nahi aaya."'},2:{id:'M002',next:'In Sarvam, open Nidaan Proactive and press Test agent. Nidaan speaks first.'},3:{id:'M003',next:'In Sarvam, open Nidaan Inbound, press Test agent and say: "Mera settlement kyun rukha hua hai?"'},4:{id:'M002',next:'In Sarvam open Nidaan Proactive, press Test agent'},5:{id:'M002',next:'In Sarvam open Nidaan Proactive, press Test agent'},6:{id:'M001',next:'No call needed. Watch the alert and the queue'},7:{id:'M002',next:'Now press Story 2 again to see who Nidaan calls later'}};
 let scn=0,last=0,busy=false,stopped=false,seen=new Set(),first=true,timer=null,state=null;
 async function api(p,q){const u=new URL(CONFIG.N8N_BASE+'/'+p);Object.entries(q||{}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 const sim=(action,m)=>api('nidaan-sim',Object.assign({fn:'sim',action},m?{merchant_id:m}:{}));
@@ -90,33 +101,74 @@ function touch(){last=Date.now();if(stopped){stopped=false;loop()}}
 ['click','keydown'].forEach(e=>addEventListener(e,touch));
 async function act(fn){if(busy)return;busy=true;try{await fn();seen.clear();first=true;await refresh()}catch(e){fail(e)}busy=false}
 function pick(n){scn=n;[1,2,3].forEach(i=>$('s'+i).classList.toggle('on',i===n));act(async()=>{await sim('reset');if(n===2)await sim('offline','M002');else await sim('set_caller',SC[n].id)})}
-function pill(s){const m={delayed:['a','Delayed at the bank'],processing:['bl','Processing'],settled:['g','Paid out'],held_for_review:['r','On risk-review hold']}[s]||['a',s];return `<span class="tag ${m[0]}">${m[1]}</span>`}
-function merchant(m){return `<h3 class="big" style="font-size:23px">${E(m.shop)}</h3><div class="sub">${E(m.owner)}, ${E(m.city)}</div>
-<div class="row"><span>Soundbox</span><span class="tag ${m.device.status==='offline'?'r':'g'}">${m.device.status==='offline'?'Offline':'Working'}</span></div>
-<div class="row"><span>Settlement ${R(m.settlement.amount)}</span>${pill(m.settlement.status)}</div>
-<div class="row"><span>Technician visit</span>${m.technician?`<span class="tag g">${E(m.technician.date)} at ${E(m.technician.time)}</span>`:'<span class="empty">None</span>'}</div>`}
-function render(s){state=s;const mt=s.metrics||{};$('k1').textContent=mt.calls||0;$('k2').textContent=mt.auto_resolved||0;$('k3').textContent=mt.escalated||0;
-const id=scn?SC[scn].id:(s.ring?s.ring.merchant_id:s.caller);const m=(s.merchants||[]).find(x=>x.id===id)||(s.merchants||[])[0];
-$('mer').innerHTML=m?merchant(m):'';
-const qs=(s.queue||[]).map(q=>Object.assign({},q,{rate:q.daily_sales/43200000})).sort((a,b)=>b.rate*(s.server_time-b.since)-a.rate*(s.server_time-a.since));
-$('queue').hidden=!qs.length;$('qrows').innerHTML=qs.map(q=>`<div class="qr"><span>${E(q.shop)}<br><small>${q.fixed?'Technician booked':q.calling?'Nidaan is calling now':'Waiting for Nidaan'}</small></span><b data-s="${q.since}" data-r="${q.rate}"></b></div>`).join('');tick();
-const ev=(s.events||[]).slice().reverse();
-$('tl').innerHTML=ev.length?ev.map(e=>{const k=e.ts+e.action+e.detail;const f=!first&&!seen.has(k);seen.add(k);return `<div class="ev ${E(e.status)}${f?' fresh':''}"><b>${E(LAB[e.action]||e.action)}</b>${E(e.detail)}<br><small>${new Date(e.ts).toLocaleTimeString('en-IN',{hour12:false})}</small></div>`}).join(''):'<div class="empty">Nothing yet.</div>';first=false;
-const h=(s.handovers||[]).slice(-1)[0],ap=(s.approvals||[])[0];
-if(h){const ch=String(h.checked||'').split(' > ').filter(Boolean).map(x=>`<li>${E(x)}</li>`).join('')||'<li>Nothing</li>';
-$('ho').innerHTML=`<h3 style="font-size:19px">${E(h.shop)}</h3><div class="why"><small>Why Nidaan escalated${h.reason_source==='inferred'?' (best guess from the call)':''}</small><div class="big">${E(h.reason||h.issue)}</div></div><b>Nidaan already checked</b><ul>${ch}</ul><b>Nidaan already tried</b><div>${E(h.tried)}</div><p class="sub">The human sees all of this the moment the call arrives. The merchant repeats nothing.</p>`+(ap?`<button class="go" onclick="act(()=>sim('approve','${E(ap.merchant_id)}'))">Approve the ${R(ap.amount)} retry</button>`:'')}
-$('msgs').innerHTML=(s.messages||[]).map(x=>`<div class="msg"><b>Message sent to ${E(x.shop)} (simulated)</b><br>${E(x.text)}</div>`).join('');
-const l=(s.events||[]).slice(-1)[0];
-if(ap){$('nowT').textContent='A human must approve '+R(ap.amount)+' before it moves.';$('nowD').textContent='Nidaan stopped on purpose. Money on risk review is a human decision.'}
-else if(l){$('nowT').textContent=LAB[l.action]||l.action;$('nowD').textContent=l.detail}
-$('nowN').textContent=scn?SC[scn].next:''}
-function tick(){document.querySelectorAll('[data-s]').forEach(e=>{e.textContent=R((Date.now()-e.dataset.s)*e.dataset.r)+' at risk'})}
+function more(n){
+  switch(n){
+    case 4:
+      return act(async()=>{await sim('reset');await sim('low_battery','M002');});
+    case 5:
+      return act(async()=>{await sim('followup','M002');});
+    case 6:
+      return act(async()=>{await sim('reset');await sim('area_outage');});
+    case 7:
+      return act(async()=>{await sim('peak');});
+  }
+}
+function pill(s){const m={delayed:['a','Delayed at the bank'],processing:['bl','Processing'],settled:['g','Paid out'],held_for_review:['r','On risk-review hold']}[s]||['a',s];return `<span class="tag ${m[0]}">${E(m[1])}</span>`}
+function merchant(m){if(!m) return '';
+  const device = m.device || {};
+  const offlineNote = device.status === 'offline' && device.note ? `<div class="row"><span>Cause</span><span class="tag r">${E(device.note)}</span></div>` : '';
+  const batteryTag = device.battery_pct != null && device.battery_pct <= 20 ? `<div class="row"><span>Battery</span><span class="tag a">Battery ${E(device.battery_pct)}%, about ${E(device.battery_hours_left)} h left</span></div>` : '';
+  return `<h3 class="big" style="font-size:23px">${E(m.shop)}</h3><div class="sub">${E(m.owner||'Merchant')}, ${E(m.city||'City')}</div>
+  <div class="row"><span>Soundbox</span><span class="tag ${device.status==='offline'?'r':'g'}">${device.status==='offline'?'Offline':'Working'}</span></div>
+  ${offlineNote}
+  ${batteryTag}
+  <div class="row"><span>Settlement ${R((m.settlement&&m.settlement.amount)||0)}</span>${pill((m.settlement&&m.settlement.status)||'processing')}</div>
+  <div class="row"><span>Technician visit</span>${m.technician?`<span class="tag g">${E(m.technician.date)} at ${E(m.technician.time)}, ${E(m.technician.part||'Standard repair kit')}</span>`:'<span class="empty">None</span>'}</div>`}
+function planText(plan, time){
+  const label = {calling_now:'Nidaan is calling now',call_now:'Waiting for Nidaan',call_later:'Nidaan will call later because the shop is busy',network_ticket:'Network ticket raised, no technician needed yet',technician_booked:'Technician booked'}[plan] || 'Waiting for Nidaan';
+  if(plan==='call_later' && time){
+    const d=new Date(time); return `Nidaan will call at ${d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:false})} because the shop is busy`;
+  }
+  return label;
+}
+function render(s){
+  state=s;
+  const mt=s.metrics||{};$('k1').textContent=mt.calls||0;$('k2').textContent=mt.auto_resolved||0;$('k3').textContent=mt.escalated||0;
+  const id=scn?SC[scn].id:(s.ring?s.ring.merchant_id:s.caller);
+  const m=(s.merchants||[]).find(x=>x.id===id)||(s.merchants||[])[0];
+  $('mer').innerHTML=m?merchant(m):'';
+  const qs=(s.queue||[]).slice().sort((a,b)=>(b.at_risk||0)-(a.at_risk||0));
+  $('queue').hidden=!qs.length;
+  $('qrows').innerHTML=qs.map(q=>`<div class="qr"><div><strong>${E(q.shop)}</strong><small>${E(planText(q.plan,q.call_after_ts))}</small></div><b data-base="${Number(q.at_risk||0)}" data-s="${Number(q.since||Date.now())}" data-r="${Number(q.at_risk||0)/60}">${R(Number(q.at_risk||0))} at risk</b></div>`).join('');
+  const arr=(s.clusters||[]);
+  const alertEl=$('alert');
+  if(arr.length){
+    const c=arr[0]; alertEl.innerHTML=`${c.count} Soundboxes offline in ${E(c.area)} within 20 minutes. Likely a network outage, not ${c.count} broken boxes. Nidaan raised one ticket with the network provider and paused technician visits.`; alertEl.classList.add('show');
+  } else { alertEl.classList.remove('show'); alertEl.innerHTML=''; }
+  const ev=(s.events||[]).slice().reverse();
+  $('tl').innerHTML=ev.length?ev.map(e=>{const k=e.ts+e.action+e.detail;const f=!first&&!seen.has(k);seen.add(k);return `<div class="ev ${E(e.status||'ok')}${f?' fresh':''}"><b>${E(LAB[e.action]||e.action)}</b>${E(e.detail)}<br><small>${new Date(e.ts).toLocaleString('en-IN',{hour12:false})}</small></div>`}).join(''):`<div class="empty">Nothing yet.</div>`;
+  first=false;
+  const h=(s.handovers||[]).slice(-1)[0],ap=(s.approvals||[])[0];
+  if(h){const ch=String(h.checked||'').split(' > ').filter(Boolean).map(x=>`<li>${E(x)}</li>`).join('')||'<li>Nothing</li>';
+  $('ho').innerHTML=`<h3 style="font-size:19px">${E(h.shop)}</h3><div class="why"><small>Why Nidaan escalated${h.reason_source==='inferred'?' (best guess from the call)':''}</small><div class="big">${E(h.reason||h.issue||'Risky edge case')}</div></div><b>Nidaan already checked</b><ul>${ch}</ul><b>Nidaan already tried</b><div>${E(h.tried||'No try step recorded')}</div>${ap?`<button class="go" onclick="act(()=>sim('approve', '${E(ap.merchant_id||''}'))">Approve the ${R(ap.amount||0)} retry</button>`:''}`;
+  } else {$('ho').innerHTML='<div class="empty">No handover yet. That is fine: Nidaan fixes most cases alone.</div>'}
+  const msgs=(s.messages||[]).map(x=>`<div class="msg"><b>Message sent to ${E(x.shop)} (simulated)</b><br>${E(x.text)}</div>`).join('');
+  $('msgs').innerHTML=msgs;
+  const l=(s.events||[]).slice(-1)[0];
+  if(ap){$('nowT').textContent='A human must approve '+R(ap.amount)+' before it moves.';$('nowD').textContent='Nidaan stopped on purpose. Money on risk review is a human decision.'}
+  else if(l){$('nowT').textContent=LAB[l.action]||l.action;$('nowD').textContent=l.detail}
+  $('nowN').textContent=scn?SC[scn].next:'';
+  if(s.peak || s.peak_demo){
+    $('queue').querySelector('h3')?.insertAdjacentHTML('beforeend',' <span class="tag bl" style="font-size:12px;vertical-align:middle;display:inline-block;margin-left:8px;">Lunch rush</span>');
+  }
+  const peakLabel = !!(s.peak_demo || s.peak) ? 'Pretend it is lunch rush (on)' : 'Pretend it is lunch rush';
+  $('s7').innerHTML='<h3>'+ ( !!(s.peak_demo || s.peak) ? 'Lunch rush is on' : 'Pretend it is lunch rush') +'</h3><span>'+peakLabel+'</span>';
+}
+function tick(){document.querySelectorAll('[data-base]').forEach(e=>{const base=Number(e.dataset.base||0);const rate=Number(e.dataset.r||0);const since=Number(e.dataset.s||Date.now());const delta=((Date.now()-since)/1000)*rate; e.textContent=R(base+delta)+' at risk';})}
 setInterval(tick,1000);
-function fail(e){$('conn').className='chip bad';$('conn').textContent='Cannot reach n8n';$('err').classList.add('on');$('err').innerHTML='<b>Cannot reach the backend ('+E(e.message)+').</b> Publish the n8n workflow and check that N8N_BASE at the top of this file is the production URL (it has /webhook/, not /webhook-test/).'}
+function fail(e){$('conn').className='chip bad';$('conn').textContent='Cannot reach n8n';$('err').classList.add('on');$('err').innerHTML='<b>Cannot reach the backend ('+E(e.message)+').</b> Publish the n8n workflow and check that N8N_BASE at the top of this file is the production URL (it has /webhook, not /webhook-test).';}
 async function refresh(){try{render(await api('nidaan-state',{fn:'state'}));$('conn').className='chip ok';$('conn').textContent='Live';$('err').classList.remove('on')}catch(e){fail(e)}}
-async function loop(){clearTimeout(timer);if(Date.now()-last>15*60000){stopped=true;$('conn').textContent='Paused to save n8n runs';$('conn').className='chip';$('poll').textContent='Click anywhere to resume.';return}
-await refresh();const active=state&&state.events&&state.events.length&&Date.now()-state.events.slice(-1)[0].ts<60000;
-$('poll').textContent='Refreshes every '+(active?3:10)+' seconds.';timer=setTimeout(loop,active?3000:10000)}
+async function loop(){clearTimeout(timer);if(Date.now()-last>15*60000){stopped=true;$('conn').textContent='Paused to save n8n runs';$('conn').className='chip';$('poll').textContent='Click anywhere to resume';return}await refresh();const active=state&&state.events&&state.events.length&&Date.now()-state.events.slice(-1)[0].ts<60000;$('poll').textContent='Refreshes every '+(active?3:10)+' seconds.';timer=setTimeout(loop,active?3000:10000)}
 last=Date.now();loop();
 </script>
 </body>
