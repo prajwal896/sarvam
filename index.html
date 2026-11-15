@@ -3,434 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nidaan | Live merchant support</title>
+<title>Nidaan | Merchant support demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0a1f3c; --card:#12294a; --card2:#183258; --line:#23406b;
-    --text:#eaf2ff; --muted:#9db4d6; --cyan:#00b4f0;
-    --green:#27c47d; --amber:#f5a524; --red:#f0596b; --blue:#4da3ff; --violet:#a78bfa;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.4}
-  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--line)}
-  .logo{font-weight:800;letter-spacing:.18em;font-size:22px}
-  .tag{color:var(--cyan);font-size:14px}
-  .spacer{flex:1}
-  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid transparent;white-space:nowrap}
-  .p-green{background:rgba(39,196,125,.15);color:var(--green);border-color:rgba(39,196,125,.4)}
-  .p-amber{background:rgba(245,165,36,.15);color:var(--amber);border-color:rgba(245,165,36,.4)}
-  .p-red{background:rgba(240,89,107,.15);color:var(--red);border-color:rgba(240,89,107,.4)}
-  .p-blue{background:rgba(77,163,255,.15);color:var(--blue);border-color:rgba(77,163,255,.4)}
-  .p-cyan{background:rgba(0,180,240,.2);color:var(--cyan);border-color:rgba(0,180,240,.6)}
-  .p-gray{background:rgba(157,180,214,.12);color:var(--muted);border-color:rgba(157,180,214,.3)}
-  .pulse{animation:pulse 1.2s ease-in-out infinite}
-  @keyframes pulse{50%{opacity:.45}}
-  main{padding:18px 22px 40px;max-width:1500px;margin:0 auto}
-  .banner{display:none;align-items:center;gap:12px;border-radius:14px;padding:12px 16px;margin-bottom:16px}
-  .banner.on{display:flex}
-  .banner.ring{background:linear-gradient(90deg,rgba(0,180,240,.25),rgba(0,180,240,.08));border:1px solid var(--cyan)}
-  .banner.idle{background:rgba(245,165,36,.12);border:1px solid var(--amber);cursor:pointer}
-  .banner .dot{width:12px;height:12px;border-radius:50%;background:var(--cyan);animation:pulse 1s infinite}
-  .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
-  .metric{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-  .metric .v{font-size:30px;font-weight:800}
-  .metric .l{color:var(--muted);font-size:13px}
-  .metric small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
-  .metric input{width:56px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:1px 4px;font-size:11px}
-  .grid{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:16px;align-items:start}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
-  .panel h2{margin:0 0 4px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
-  .panel .sub2{color:var(--muted);font-size:12px;margin-bottom:12px}
-  .stack{display:flex;flex-direction:column;gap:16px}
-  .m{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;transition:box-shadow .3s}
-  .m.flash{box-shadow:0 0 0 2px var(--cyan)}
-  .m b{font-size:15px}
-  .m .sub{color:var(--muted);font-size:12px}
-  .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px;gap:8px}
-  .tl{max-height:380px;overflow:auto;padding-right:4px}
-  .ev{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
-  .ev:last-child{border-bottom:none}
-  .ev.new{animation:slide .5s ease-out}
-  @keyframes slide{from{opacity:0;transform:translateY(-8px);background:rgba(0,180,240,.18)}to{opacity:1}}
-  .dotc{flex:0 0 10px;height:10px;border-radius:50%;margin-top:6px}
-  .ev .t{color:var(--muted);font-size:11px;white-space:nowrap}
-  .ev .a{font-weight:600;font-size:14px}
-  .ev .d{color:var(--muted);font-size:13px}
-  .empty{color:var(--muted);font-size:14px;padding:6px 0}
-  .btn{width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:12px 14px;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:8px}
-  .btn:hover{border-color:var(--cyan)}
-  .btn:disabled{opacity:.5;cursor:wait}
-  .btn.primary{background:var(--cyan);color:#04223d;font-weight:700;border-color:var(--cyan)}
-  .btn.approve{background:var(--violet);color:#150a3a;font-weight:700;border-color:var(--violet);margin-top:12px}
-  .btn small{display:block;color:var(--muted);font-weight:400;margin-top:2px}
-  .btn.primary small{color:#04365c}
-  select{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;margin-bottom:10px}
-  label.k2{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
-  .ho .k{color:var(--muted);font-size:12px;margin-top:10px;text-transform:uppercase;letter-spacing:.08em}
-  .ho ul{margin:4px 0 0;padding-left:18px;font-size:14px}
-  .note{color:var(--muted);font-size:12px;margin-top:10px}
-  .q{display:grid;grid-template-columns:22px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .q:last-child{border-bottom:none}
-  .q .rk{color:var(--muted);font-weight:700}
-  .q .sh small{display:block;color:var(--muted);font-size:12px}
-  .q .rs{font-weight:700;text-align:right;min-width:78px}
-  .bigrisk{font-size:26px;font-weight:800;color:var(--amber);margin-bottom:8px}
-  .msg{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:8px}
-  .msg small{display:block;color:var(--muted);margin-bottom:3px}
-  details{margin-top:6px}
-  summary{cursor:pointer;color:var(--cyan);font-size:13px;margin-bottom:6px}
-  .sc{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px}
-  .sc b{display:block;margin-bottom:4px}
-  .sc ol{margin:6px 0 0;padding-left:18px}
-  .st{font-size:13px;display:flex;gap:8px;padding:3px 0}
-  .setup{display:none;background:rgba(240,89,107,.12);border:1px solid var(--red);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:14px}
-  .setup.on{display:block}
-  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#04223d;border:1px solid var(--cyan);border-radius:10px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
-  .toast.on{opacity:1}
-  footer{color:var(--muted);font-size:12px;text-align:center;padding:10px 22px 28px}
-  @media(max-width:1100px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+:root{--paper:#EDF2F6;--card:#fff;--ink:#0E2236;--mute:#56697C;--line:#CBD6E0;--blue:#0B4FB8;--cyan:#00B9F1;--green:#1B7F55;--amber:#A8620A;--red:#B8283C;
+--d:'Fraunces',Georgia,'Times New Roman',serif;--b:'Source Serif 4',Georgia,'Times New Roman',serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.5 var(--b)}
+h1,h2,h3,.big{font-family:var(--d);font-weight:700;margin:0}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:16px 28px;background:var(--ink);color:#fff}
+header h1{font-size:30px;letter-spacing:.02em}
+header p{margin:0;color:#BFD3E6;flex:1}
+.chip{border:1px solid #4B6580;border-radius:99px;padding:3px 12px;font-size:14px}
+.chip.ok{border-color:#58D39B;color:#58D39B}.chip.bad{border-color:#FF8A99;color:#FF8A99}
+main{max-width:1300px;margin:0 auto;padding:22px 28px 40px}
+.pick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sc{background:var(--card);border:2px solid var(--line);border-radius:6px;padding:14px 16px;text-align:left;color:var(--ink)}
+.sc:hover{border-color:var(--blue)}.sc.on{border-color:var(--blue);background:#E8F0FD}
+.sc h3{font-size:19px}.sc span{display:block;color:var(--mute);font-size:15px;margin-top:2px}
+.now{margin:18px 0;background:var(--card);border-left:8px solid var(--cyan);padding:16px 22px;border-radius:0 6px 6px 0}
+.now .big{font-size:28px;line-height:1.2}.now p{margin:6px 0 0;color:var(--mute)}
+.now .next{color:var(--blue);font-weight:600}
+.stats{display:flex;gap:34px;margin:0 0 18px;flex-wrap:wrap}
+.stats div{font-size:15px;color:var(--mute)}.stats b{font:700 30px var(--d);color:var(--ink);margin-right:8px}
+.grid{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:18px;align-items:start}
+.col{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px}
+.col h2{font-size:21px}.col .sub{color:var(--mute);font-size:14px;margin:2px 0 12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.tag{border-radius:3px;padding:1px 9px;font-size:14px;font-weight:600;border:1px solid}
+.g{color:var(--green);border-color:var(--green)}.a{color:var(--amber);border-color:var(--amber)}.r{color:var(--red);border-color:var(--red)}.bl{color:var(--blue);border-color:var(--blue)}
+.q{margin-top:18px}.q h3{font-size:18px}
+.qr{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
+.qr b{font-family:var(--d);color:var(--red);white-space:nowrap}
+.tl{max-height:520px;overflow:auto}
+.ev{padding:9px 0 9px 14px;border-left:4px solid var(--line);margin-left:4px}
+.ev+.ev{margin-top:4px}.ev.ok{border-color:var(--green)}.ev.warn{border-color:var(--amber)}.ev.escalated,.ev.error{border-color:var(--red)}.ev.log{border-color:var(--blue)}
+.ev b{display:block;font-family:var(--d)}.ev small{color:var(--mute)}
+.why{border:2px solid var(--red);border-radius:6px;padding:12px 14px;margin:6px 0 12px;background:#FDF0F2}
+.why .big{font-size:22px;line-height:1.25}.why small{color:var(--mute)}
+ul{margin:4px 0 10px;padding-left:20px}
+.go{display:block;width:100%;background:var(--blue);color:#fff;border:0;border-radius:6px;padding:13px;font:700 18px var(--d);margin:10px 0}
+.go:hover{background:#093F93}.go:disabled{opacity:.5}
+.msg{background:#E9F6EF;border:1px solid var(--green);border-radius:6px;padding:10px 12px;margin-top:8px;font-size:15px}
+.empty{color:var(--mute);font-style:italic}
+.err{display:none;background:#FDF0F2;border:1px solid var(--red);padding:12px 16px;margin-bottom:14px;border-radius:6px}.err.on{display:block}
+.tools{margin-top:18px;font-size:14px;color:var(--mute)}.tools button{background:none;border:1px solid var(--line);border-radius:4px;padding:4px 10px;color:var(--mute)}
+footer{text-align:center;color:var(--mute);font-size:14px;padding:0 20px 26px}
+@media(max-width:1000px){.pick,.grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:no-preference){.ev.fresh{animation:f .6s}@keyframes f{from{background:#DDF3FB}}}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">NIDAAN</div>
-  <div class="tag">Every merchant problem, solved with one call.</div>
-  <div class="spacer"></div>
-  <span id="conn" class="pill p-gray">Connecting…</span>
-</header>
-
+<header><h1>Nidaan</h1><p>An AI voice agent that fixes merchant problems during the call, and calls the merchant first when something breaks.</p><span id="conn" class="chip">Connecting</span></header>
 <main>
-  <div id="setup" class="setup"></div>
-  <div id="idle" class="banner idle" onclick="resume()">Paused to save n8n executions. Click here (or anywhere) to resume live updates.</div>
-  <div id="ring" class="banner ring">
-    <div class="dot"></div>
-    <div id="ringText" style="flex:1"></div>
-    <button class="btn" style="width:auto;margin:0;padding:6px 12px" onclick="sim('clear_ring')">Dismiss</button>
-  </div>
-
-  <section class="metrics">
-    <div class="metric"><div class="v" id="mCalls">0</div><div class="l">Calls handled</div></div>
-    <div class="metric"><div class="v" id="mAuto">–</div><div class="l">Resolved without a human</div></div>
-    <div class="metric"><div class="v" id="mEsc">0</div><div class="l">Handed to humans</div></div>
-    <div class="metric"><div class="v" id="mTime">–</div><div class="l">Avg time per call</div></div>
-    <div class="metric"><div class="v" id="mSaved">₹0</div><div class="l">Est. support cost saved</div>
-      <small>Estimate: assumes ₹<input id="cost" type="number" min="0" value="50"> per human-handled call</small></div>
-  </section>
-
-  <section class="grid">
-    <div class="panel">
-      <h2>Simulated Paytm backend</h2>
-      <div class="sub2">Demo only: stands in for Paytm's real merchant, device and settlement systems.</div>
-      <label class="k2" for="caller">Who is calling Nidaan? (stands in for the caller's phone number)</label>
-      <select id="caller" onchange="sim('set_caller', this.value)"></select>
-      <div id="merchants"><div class="empty">Loading…</div></div>
-      <button class="btn primary" onclick="sim('offline','M002')">Simulate a Soundbox outage<small>Sunita Tailors and five more go offline. Nidaan calls the top one first.</small></button>
-      <button class="btn" onclick="sim('delay','M001')">Make Ramesh's settlement delayed again</button>
-      <button class="btn" onclick="sim('reset')">Reset demo data</button>
-    </div>
-
-    <div class="stack">
-      <div class="panel">
-        <h2>Nidaan ops queue</h2>
-        <div class="sub2">Offline Soundboxes ranked by money at risk. Nidaan works from the top.</div>
-        <div class="bigrisk" id="riskTotal">₹0 at risk</div>
-        <div id="queue"><div class="empty">No outages. Everything is online.</div></div>
-        <div class="note">Simulated fleet. Risk = daily sales ÷ 10 trading hours × hours offline (an assumption).</div>
-      </div>
-      <div class="panel">
-        <h2>Live action timeline</h2>
-        <div id="timeline" class="tl"><div class="empty">Waiting for activity…</div></div>
-      </div>
-    </div>
-
-    <div class="stack">
-      <div class="panel ho">
-        <h2>Human handover</h2>
-        <div id="handover"><div class="empty">No escalations yet.</div></div>
-      </div>
-      <div class="panel">
-        <h2>Merchant notifications</h2>
-        <div id="messages"><div class="empty">Nothing sent yet.</div></div>
-      </div>
-      <div class="panel">
-        <h2>Backend self-test</h2>
-        <div class="sub2">Runs every tool like the agent would, without any voice. Uses about 16 n8n executions and creates one calendar event.</div>
-        <button class="btn" id="bTest" onclick="selfTest()">Run backend self-test</button>
-        <div id="testOut"></div>
-      </div>
-      <div class="panel">
-        <h2>Demo script</h2>
-        <details open>
-          <summary>No variables to touch. Pick the scenario here.</summary>
-          <div class="sc"><b>1. Merchant calls: delayed settlement</b>
-            <ol><li>Reset demo data, then choose "Ramesh Kirana Store" as the caller</li><li>Sarvam: agent "Nidaan Inbound", Test agent</li><li>Say: "Mera kal ka paisa abhi tak nahi aaya"</li></ol></div>
-          <div class="sc"><b>2. Nidaan calls first: Soundbox outage</b>
-            <ol><li>Click "Simulate a Soundbox outage" and watch the queue</li><li>Sarvam: agent "Nidaan Proactive", Test agent</li><li>Nidaan speaks first and explains the problem</li></ol></div>
-          <div class="sc"><b>3. Risky case: human approves</b>
-            <ol><li>Choose "Imran Chai Point" as the caller</li><li>Inbound agent: "Mera settlement kyun ruka hua hai?"</li><li>Click "Approve" in the handover card</li></ol></div>
-        </details>
-      </div>
-    </div>
-  </section>
+<div id="err" class="err"></div>
+<div class="pick">
+<button class="sc" id="s1" onclick="pick(1)"><h3>1. Merchant calls: money not received</h3><span>Ramesh Kirana Store. Nidaan checks, retries and confirms.</span></button>
+<button class="sc" id="s2" onclick="pick(2)"><h3>2. Nidaan calls first: Soundbox offline</h3><span>Sunita Tailors. Nidaan finds the fault and books a technician.</span></button>
+<button class="sc" id="s3" onclick="pick(3)"><h3>3. Risky case: a human decides</h3><span>Imran Chai Point. Nidaan hands over and says why.</span></button>
+</div>
+<div class="now" aria-live="polite"><div class="big" id="nowT">Pick a story above to begin.</div><p id="nowD"></p><p class="next" id="nowN"></p></div>
+<div class="stats"><div><b id="k1">0</b>calls handled</div><div><b id="k2">0</b>fixed without a human</div><div><b id="k3">0</b>handed to a human</div></div>
+<div class="grid">
+<section class="col"><h2>The merchant</h2><div class="sub">Simulated Paytm data, for the demo only</div><div id="mer"></div>
+<div class="q" id="queue" hidden><h3>Soundboxes offline, most money at risk first</h3><div class="sub">Nidaan's ops queue. Rupees at risk keep growing.</div><div id="qrows"></div></div></section>
+<section class="col"><h2>What Nidaan did</h2><div class="sub">Every action, newest first</div><div class="tl" id="tl"><div class="empty">Nothing yet.</div></div></section>
+<section class="col"><h2>Human team</h2><div class="sub">Only called in when Nidaan should not decide alone</div><div id="ho"><div class="empty">No handover yet. That is fine: Nidaan fixes most cases alone.</div></div><div id="msgs"></div></section>
+</div>
+<div class="tools"><button onclick="act(()=>sim('reset'))">Reset demo data</button> <span id="poll"></span></div>
 </main>
-
-<footer>Prototype for the Paytm Build for India AI Hackathon · Team Nexis · Merchant, device and settlement data is mocked for the demo</footer>
-<div id="toast" class="toast"></div>
-
+<footer>Team Nexis, Paytm Build for India AI Hackathon. Merchant data and notifications are simulated.</footer>
 <script>
-/* ---------- CONFIG: only edit this block ---------- */
-const CONFIG = {
-  N8N_BASE: 'https://paytm3.app.n8n.cloud/webhook',   // production webhook base, no trailing slash
-  FAST_MS: 3000,        // while something is happening
-  SLOW_MS: 10000,       // when idle (each poll is one n8n execution)
-  IDLE_PAUSE_MIN: 15    // stop polling after this many minutes without interaction
-};
-/* -------------------------------------------------- */
-
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const inr = (n) => '₹' + Math.round(Number(n)).toLocaleString('en-IN');
-
-const LABELS = {
-  device_offline_detected: 'Soundbox offline detected',
-  outage_wave_detected: 'Outage detected, ranked by money at risk',
-  outbound_call_started: 'Nidaan calls the merchant first',
-  settlement_delay_detected: 'Settlement delay detected',
-  call_connected: 'Call connected',
-  get_device_status: 'Device check',
-  get_settlement_status: 'Settlement check',
-  retry_settlement: 'Settlement retry',
-  check_technician_slots: 'Technician slots checked',
-  book_technician: 'Technician booked',
-  escalate_to_human: 'Handed to human team',
-  human_approved: 'Human approved',
-  log_call: 'Call logged',
-  call_ended: 'Call ended'
-};
-const STATUS_COLOR = { ok: 'var(--green)', warn: 'var(--amber)', error: 'var(--red)', escalated: 'var(--violet)', log: 'var(--blue)' };
-
-/* ---------- pure render helpers ---------- */
-function devicePill(d) { return d.status === 'offline' ? '<span class="pill p-red">Offline</span>' : '<span class="pill p-green">Online</span>'; }
-function settlementPill(s) {
-  const map = { delayed: ['p-amber', 'Delayed', ''], processing: ['p-blue', 'Processing', ' pulse'], settled: ['p-green', 'Settled', ''], held_for_review: ['p-red', 'On hold (review)', ''] };
-  const x = map[s.status] || ['p-gray', s.status, ''];
-  return '<span class="pill ' + x[0] + x[2] + '">' + esc(x[1]) + '</span>';
-}
-function merchantHTML(m, flash) {
-  const tech = m.technician ? '<div class="row"><span>Technician</span><span class="pill p-green">' + esc(m.technician.date) + ' · ' + esc(m.technician.time) + '</span></div>' : '';
-  return '<div class="m' + (flash ? ' flash' : '') + '"><b>' + esc(m.shop) + '</b><div class="sub">' + esc(m.owner) + ' · ' + esc(m.city) + ' · ' + esc(m.id) + '</div>' +
-    '<div class="row"><span>Soundbox</span>' + devicePill(m.device) + '</div>' +
-    '<div class="row"><span>Settlement ' + esc(inr(m.settlement.amount)) + '</span>' + settlementPill(m.settlement) + '</div>' + tech + '</div>';
-}
-function timeStr(ts) { return new Date(ts).toLocaleTimeString('en-IN', { hour12: false }); }
-function eventHTML(e, isNew) {
-  return '<div class="ev' + (isNew ? ' new' : '') + '"><span class="dotc" style="background:' + (STATUS_COLOR[e.status] || 'var(--muted)') + '"></span>' +
-    '<div style="flex:1"><div class="a">' + esc(LABELS[e.action] || e.action) + '</div><div class="d">' + esc(e.detail) + '</div></div>' +
-    '<div class="t">' + esc(timeStr(e.ts)) + '</div></div>';
-}
-function handoverHTML(h, approvals) {
-  if (!h) return '<div class="empty">No escalations yet.</div>';
-  const urg = { high: 'p-red', medium: 'p-amber', low: 'p-gray' }[h.urgency] || 'p-amber';
-  const checked = String(h.checked || '').split(' > ').filter(Boolean).map(x => '<li>' + esc(x) + '</li>').join('') || '<li>–</li>';
-  const ap = (approvals || []).find(a => a.merchant_id === h.merchant_id);
-  const btn = ap ? '<button class="btn approve" onclick="sim(\'approve\',\'' + esc(h.merchant_id) + '\')">Approve ' + esc(inr(ap.amount)) + ' retry<small style="color:#2a1a66">The human decides. Nidaan then informs the merchant.</small></button>' : '';
-  return '<div><b>' + esc(h.shop) + '</b> <span class="pill ' + urg + '">' + esc(h.urgency) + ' priority</span>' +
-    '<div class="k">Issue</div><div>' + esc(h.issue) + '</div>' +
-    '<div class="k">Already checked by Nidaan</div><ul>' + checked + '</ul>' +
-    '<div class="k">Already tried</div><div>' + esc(h.tried) + '</div>' + btn +
-    '<div class="note">The human sees this the moment the call is handed over, so the merchant never repeats the problem.</div></div>';
-}
-function messagesHTML(msgs) {
-  if (!msgs || !msgs.length) return '<div class="empty">Nothing sent yet.</div>';
-  return msgs.slice().reverse().map(m => '<div class="msg"><small>' + esc(timeStr(m.ts)) + ' · to ' + esc(m.shop) + ' · ' + esc(m.channel) + '</small>' + esc(m.text) + '</div>').join('');
-}
-function riskOf(row, nowTs) {
-  const hours = Math.min(10, Math.max(0, (nowTs - row.since) / 3600000));
-  return (row.daily_sales / 10) * hours;
-}
-function hoursLabel(row, nowTs) {
-  const mins = Math.max(0, Math.floor((nowTs - row.since) / 60000));
-  return Math.floor(mins / 60) + 'h ' + String(mins % 60).padStart(2, '0') + 'm offline';
-}
-function queueView(queue, nowTs) {
-  const rows = (queue || []).map(r => Object.assign({}, r, { risk: riskOf(r, nowTs) })).sort((a, b) => b.risk - a.risk);
-  const total = rows.filter(r => !r.fixed).reduce((s, r) => s + r.risk, 0);
-  const html = rows.map((r, i) => {
-    const pill = r.fixed ? '<span class="pill p-green">Technician booked</span>' : r.calling ? '<span class="pill p-cyan pulse">Calling now</span>' : '<span class="pill p-gray">Queued</span>';
-    return '<div class="q"><span class="rk">' + (i + 1) + '</span><span class="sh"><b>' + esc(r.shop) + '</b><small>' + esc(r.city) + ' · ' + esc(hoursLabel(r, nowTs)) + '</small></span>' + pill +
-      '<span class="rs">' + esc(inr(r.risk)) + '</span></div>';
-  }).join('');
-  return { total, html: html || '<div class="empty">No outages. Everything is online.</div>' };
-}
-function metricsView(state, costPerCall) {
-  const mt = state.metrics || {};
-  const calls = mt.calls || 0;
-  const pct = calls ? Math.round((mt.auto_resolved / calls) * 100) + '%' : '–';
-  let time = '–';
-  if (typeof mt.avg_resolution_s === 'number' && calls) time = Math.floor(mt.avg_resolution_s / 60) + ':' + String(mt.avg_resolution_s % 60).padStart(2, '0');
-  return { calls, pct, esc: mt.escalated || 0, time, saved: inr((mt.auto_resolved || 0) * (Number(costPerCall) || 0)) };
-}
-function ringView(state) {
-  if (!state.ring) return null;
-  const m = (state.queue || []).find(x => x.id === state.ring.merchant_id) || (state.merchants || []).find(x => x.id === state.ring.merchant_id);
-  return 'Nidaan is calling ' + (m ? m.shop : state.ring.merchant_id) + ' now. Open the "Nidaan Proactive" agent in Sarvam and press Test agent to answer as the merchant.';
-}
-
-/* ---------- app ---------- */
-const $ = (id) => document.getElementById(id);
-const seen = new Set();
-const sig = {};
-let firstLoad = true, lastState = null, fetchedAt = 0, lastActionTs = 0, paused = false, lastInteract = Date.now(), busy = false;
-
-const getCost = () => { const v = Number($('cost').value); return isNaN(v) ? 0 : v; };
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1800); }
-function serverNow() { return lastState ? lastState.server_time + (Date.now() - fetchedAt) : Date.now(); }
-
-async function call(path, params, method) {
-  const u = new URL(CONFIG.N8N_BASE.replace(/\/$/, '') + '/' + path);
-  Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
-  const r = await fetch(u.toString(), method ? { method } : undefined);
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
-}
-const api = (path, params) => call(path, params);
-const tool = (name, params) => call('nidaan-tools', Object.assign({ name }, params), 'POST');
-
-async function sim(action, merchant) {
-  lastActionTs = Date.now();
-  const btns = document.querySelectorAll('.btn'); btns.forEach(b => b.disabled = true);
-  try {
-    const p = { fn: 'sim', action };
-    if (merchant) p.merchant_id = merchant;
-    const r = await api('nidaan-sim', p);
-    if (action === 'reset') { seen.clear(); firstLoad = true; }
-    toast({ offline: 'Outage detected: Nidaan is placing the first call', delay: 'Settlement delayed', reset: 'Demo data reset', clear_ring: 'Dismissed', approve: r.ok ? 'Approved: merchant is being informed' : 'Nothing to approve', set_caller: 'Caller selected' }[action] || 'Done');
-    await refresh();
-  } catch (e) { toast('Could not reach n8n (' + e.message + ')'); }
-  btns.forEach(b => b.disabled = false);
-}
-
-function render(state) {
-  // caller select
-  const sel = $('caller');
-  if (document.activeElement !== sel) {
-    sel.innerHTML = (state.merchants || []).map(m => '<option value="' + esc(m.id) + '"' + (m.id === state.caller ? ' selected' : '') + '>' + esc(m.shop) + ' (' + esc(m.owner) + ')</option>').join('');
-  }
-  // merchants
-  $('merchants').innerHTML = (state.merchants || []).map(m => {
-    const s = JSON.stringify([m.device.status, m.settlement.status, m.settlement.amount, m.technician]);
-    const flash = sig[m.id] !== undefined && sig[m.id] !== s; sig[m.id] = s;
-    return merchantHTML(m, flash);
-  }).join('') || '<div class="empty">No merchants.</div>';
-  setTimeout(() => document.querySelectorAll('.m.flash').forEach(x => x.classList.remove('flash')), 1200);
-
-  // timeline
-  const evs = (state.events || []).slice().reverse();
-  $('timeline').innerHTML = evs.length ? evs.map(e => {
-    const k = e.ts + '|' + e.action + '|' + e.merchant_id + '|' + e.detail;
-    const isNew = !firstLoad && !seen.has(k); seen.add(k);
-    return eventHTML(e, isNew);
-  }).join('') : '<div class="empty">Waiting for activity…</div>';
-  firstLoad = false;
-
-  // handover, messages
-  const hs = state.handovers || [];
-  $('handover').innerHTML = handoverHTML(hs[hs.length - 1], state.approvals);
-  $('messages').innerHTML = messagesHTML(state.messages);
-
-  // metrics
-  const mv = metricsView(state, getCost());
-  $('mCalls').textContent = mv.calls; $('mAuto').textContent = mv.pct; $('mEsc').textContent = mv.esc; $('mTime').textContent = mv.time; $('mSaved').textContent = mv.saved;
-
-  // ring
-  const rt = ringView(state);
-  if (rt) { $('ringText').textContent = rt; $('ring').classList.add('on'); } else { $('ring').classList.remove('on'); }
-  renderQueue();
-}
-function renderQueue() {
-  if (!lastState) return;
-  const qv = queueView(lastState.queue, serverNow());
-  $('queue').innerHTML = qv.html;
-  $('riskTotal').textContent = inr(qv.total) + ' at risk right now';
-}
-function setConn(ok, msg) { const c = $('conn'); c.className = 'pill ' + (ok ? 'p-green' : 'p-red'); c.textContent = msg; }
-
-async function refresh() {
-  if (busy) return; busy = true;
-  try {
-    const state = await api('nidaan-state', { fn: 'state' });
-    lastState = state; fetchedAt = Date.now();
-    render(state);
-    setConn(true, 'Live · ' + timeStr(Date.now()));
-    $('setup').classList.remove('on');
-  } catch (e) {
-    setConn(false, 'Cannot reach n8n');
-    const s = $('setup'); s.classList.add('on');
-    s.innerHTML = '<b>Cannot reach the Nidaan backend (' + esc(e.message) + ').</b> Check that the n8n workflow is <b>Active</b>, that N8N_BASE at the top of this file is the production webhook URL (it contains /webhook/, not /webhook-test/), and that your n8n plan still has executions left today.';
-  }
-  busy = false;
-}
-function nextDelay() {
-  const now = Date.now();
-  const active = (now - lastActionTs < 60000) || (lastState && lastState.ring) ||
-    (lastState && lastState.events.length && lastState.server_time - lastState.events[lastState.events.length - 1].ts < 90000);
-  return active ? CONFIG.FAST_MS : CONFIG.SLOW_MS;
-}
-function resume() { paused = false; lastInteract = Date.now(); $('idle').classList.remove('on'); refresh(); }
-function touch() {
-  const wasPaused = paused;
-  lastInteract = Date.now();
-  if (wasPaused) resume();
-}
-['click', 'keydown', 'mousemove', 'touchstart'].forEach(ev => document.addEventListener(ev, touch, { passive: true }));
-
-async function loop() {
-  if (!paused && !document.hidden) {
-    if (Date.now() - lastInteract > CONFIG.IDLE_PAUSE_MIN * 60000) { paused = true; $('idle').classList.add('on'); }
-    else await refresh();
-  }
-  setTimeout(loop, nextDelay());
-}
-
-/* ---------- backend self-test (no voice) ---------- */
-async function selfTest() {
-  lastActionTs = Date.now();
-  const out = $('testOut'); const b = $('bTest'); b.disabled = true; out.innerHTML = '';
-  const S = (action, merchant) => () => api('nidaan-sim', { fn: 'sim', action, merchant_id: merchant || '' });
-  const steps = [
-    ['Reset demo data', S('reset'), r => r.ok],
-    ['Outage wave detected', S('offline', 'M002'), r => r.ok],
-    ['Proactive call context (Sunita)', () => tool('get_outbound_context', { call_id: 'selftest-a' }), r => r.merchant_id === 'M002' && r.call_direction === 'outbound'],
-    ['Device check shows offline', () => tool('get_device_status', { merchant_id: 'M002', call_id: 'selftest-a' }), r => r.device_status === 'offline'],
-    ['Technician slots available', () => tool('check_technician_slots', { merchant_id: 'M002', call_id: 'selftest-a' }), r => Array.isArray(r.available_slots) && r.available_slots.length > 0],
-    ['Technician booked (check your Google Calendar)', () => tool('book_technician', { merchant_id: 'M002', call_id: 'selftest-a' }), r => r.success === true],
-    ['Call logged', () => tool('log_call', { merchant_id: 'M002', call_id: 'selftest-a' }), r => r.logged === true],
-    ['Caller set to Ramesh', S('set_caller', 'M001'), r => r.ok],
-    ['Inbound call context (Ramesh)', () => tool('get_call_context', { call_id: 'selftest-b' }), r => r.merchant_id === 'M001' && r.call_direction === 'inbound'],
-    ['Settlement check shows delayed', () => tool('get_settlement_status', { merchant_id: 'M001', call_id: 'selftest-b' }), r => r.status === 'delayed' && r.retry_allowed === true],
-    ['Settlement retried', () => tool('retry_settlement', { merchant_id: 'M001', call_id: 'selftest-b' }), r => r.success === true],
-    ['Call logged', () => tool('log_call', { merchant_id: 'M001', call_id: 'selftest-b' }), r => r.logged === true],
-    ['Large settlement is not auto-retried', () => tool('retry_settlement', { merchant_id: 'M003', call_id: 'selftest-c' }), r => r.requires_human === true],
-    ['Handed to human with approval request', () => tool('escalate_to_human', { merchant_id: 'M003', call_id: 'selftest-c' }), r => r.success === true],
-    ['Human approves, merchant informed', S('approve', 'M003'), r => r.ok],
-    ['Reset demo data', S('reset'), r => r.ok]
-  ];
-  let fails = 0;
-  for (const [name, fn, check] of steps) {
-    const t0 = Date.now(); let ok = false, note = '';
-    try { const r = await fn(); ok = !!check(r); if (!ok) note = ' (unexpected reply)'; } catch (e) { note = ' (' + e.message + ')'; }
-    if (!ok) fails++;
-    out.insertAdjacentHTML('beforeend', '<div class="st"><span style="color:' + (ok ? 'var(--green)' : 'var(--red)') + '">' + (ok ? '✓' : '✗') + '</span><span>' + esc(name) + esc(note) + ' <small style="color:var(--muted)">' + (Date.now() - t0) + ' ms</small></span></div>');
-    if (!ok && /Reset|n8n|HTTP/.test(note)) break;
-  }
-  out.insertAdjacentHTML('beforeend', '<div class="note">' + (fails ? fails + ' step(s) failed. Open n8n Executions for the error.' : 'All steps passed. Now check Google Calendar for the Soundbox repair event.') + '</div>');
-  seen.clear(); firstLoad = true;
-  b.disabled = false; await refresh();
-}
-
-try { const saved = localStorage.getItem('nidaan_cost'); if (saved) $('cost').value = saved; } catch (e) {}
-$('cost').addEventListener('input', () => { try { localStorage.setItem('nidaan_cost', $('cost').value); } catch (e) {} if (lastState) render(lastState); });
-setInterval(renderQueue, 1000);
-loop();
+const CONFIG={N8N_BASE:'https://paytm3.app.n8n.cloud/webhook'};
+const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const R=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const $=id=>document.getElementById(id);
+const LAB={call_connected:'Call connected',get_device_status:'Checked the Soundbox',get_settlement_status:'Checked the settlement',retry_settlement:'Retried the settlement',check_technician_slots:'Looked for technician slots',book_technician:'Technician booked',escalate_to_human:'Handed to the human team',log_call:'Call logged',call_ended:'Call ended',human_approved:'Human approved',outage_wave_detected:'Outage detected',device_offline_detected:'Soundbox went offline',outbound_call_started:'Nidaan is calling the merchant',settlement_delay_detected:'Settlement delay detected'};
+const SC={1:{id:'M001',next:'In Sarvam, open Nidaan Inbound, press Test agent and say: "Mera kal ka paisa nahi aaya."'},2:{id:'M002',next:'In Sarvam, open Nidaan Proactive and press Test agent. Nidaan speaks first.'},3:{id:'M003',next:'In Sarvam, open Nidaan Inbound, press Test agent and say: "Mera settlement kyun ruka hua hai?"'}};
+let scn=0,last=0,busy=false,stopped=false,seen=new Set(),first=true,timer=null,state=null;
+async function api(p,q){const u=new URL(CONFIG.N8N_BASE+'/'+p);Object.entries(q||{}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+const sim=(action,m)=>api('nidaan-sim',Object.assign({fn:'sim',action},m?{merchant_id:m}:{}));
+function touch(){last=Date.now();if(stopped){stopped=false;loop()}}
+['click','keydown'].forEach(e=>addEventListener(e,touch));
+async function act(fn){if(busy)return;busy=true;try{await fn();seen.clear();first=true;await refresh()}catch(e){fail(e)}busy=false}
+function pick(n){scn=n;[1,2,3].forEach(i=>$('s'+i).classList.toggle('on',i===n));act(async()=>{await sim('reset');if(n===2)await sim('offline','M002');else await sim('set_caller',SC[n].id)})}
+function pill(s){const m={delayed:['a','Delayed at the bank'],processing:['bl','Processing'],settled:['g','Paid out'],held_for_review:['r','On risk-review hold']}[s]||['a',s];return `<span class="tag ${m[0]}">${m[1]}</span>`}
+function merchant(m){return `<h3 class="big" style="font-size:23px">${E(m.shop)}</h3><div class="sub">${E(m.owner)}, ${E(m.city)}</div>
+<div class="row"><span>Soundbox</span><span class="tag ${m.device.status==='offline'?'r':'g'}">${m.device.status==='offline'?'Offline':'Working'}</span></div>
+<div class="row"><span>Settlement ${R(m.settlement.amount)}</span>${pill(m.settlement.status)}</div>
+<div class="row"><span>Technician visit</span>${m.technician?`<span class="tag g">${E(m.technician.date)} at ${E(m.technician.time)}</span>`:'<span class="empty">None</span>'}</div>`}
+function render(s){state=s;const mt=s.metrics||{};$('k1').textContent=mt.calls||0;$('k2').textContent=mt.auto_resolved||0;$('k3').textContent=mt.escalated||0;
+const id=scn?SC[scn].id:(s.ring?s.ring.merchant_id:s.caller);const m=(s.merchants||[]).find(x=>x.id===id)||(s.merchants||[])[0];
+$('mer').innerHTML=m?merchant(m):'';
+const qs=(s.queue||[]).map(q=>Object.assign({},q,{rate:q.daily_sales/43200000})).sort((a,b)=>b.rate*(s.server_time-b.since)-a.rate*(s.server_time-a.since));
+$('queue').hidden=!qs.length;$('qrows').innerHTML=qs.map(q=>`<div class="qr"><span>${E(q.shop)}<br><small>${q.fixed?'Technician booked':q.calling?'Nidaan is calling now':'Waiting for Nidaan'}</small></span><b data-s="${q.since}" data-r="${q.rate}"></b></div>`).join('');tick();
+const ev=(s.events||[]).slice().reverse();
+$('tl').innerHTML=ev.length?ev.map(e=>{const k=e.ts+e.action+e.detail;const f=!first&&!seen.has(k);seen.add(k);return `<div class="ev ${E(e.status)}${f?' fresh':''}"><b>${E(LAB[e.action]||e.action)}</b>${E(e.detail)}<br><small>${new Date(e.ts).toLocaleTimeString('en-IN',{hour12:false})}</small></div>`}).join(''):'<div class="empty">Nothing yet.</div>';first=false;
+const h=(s.handovers||[]).slice(-1)[0],ap=(s.approvals||[])[0];
+if(h){const ch=String(h.checked||'').split(' > ').filter(Boolean).map(x=>`<li>${E(x)}</li>`).join('')||'<li>Nothing</li>';
+$('ho').innerHTML=`<h3 style="font-size:19px">${E(h.shop)}</h3><div class="why"><small>Why Nidaan escalated${h.reason_source==='inferred'?' (best guess from the call)':''}</small><div class="big">${E(h.reason||h.issue)}</div></div><b>Nidaan already checked</b><ul>${ch}</ul><b>Nidaan already tried</b><div>${E(h.tried)}</div><p class="sub">The human sees all of this the moment the call arrives. The merchant repeats nothing.</p>`+(ap?`<button class="go" onclick="act(()=>sim('approve','${E(ap.merchant_id)}'))">Approve the ${R(ap.amount)} retry</button>`:'')}
+$('msgs').innerHTML=(s.messages||[]).map(x=>`<div class="msg"><b>Message sent to ${E(x.shop)} (simulated)</b><br>${E(x.text)}</div>`).join('');
+const l=(s.events||[]).slice(-1)[0];
+if(ap){$('nowT').textContent='A human must approve '+R(ap.amount)+' before it moves.';$('nowD').textContent='Nidaan stopped on purpose. Money on risk review is a human decision.'}
+else if(l){$('nowT').textContent=LAB[l.action]||l.action;$('nowD').textContent=l.detail}
+$('nowN').textContent=scn?SC[scn].next:''}
+function tick(){document.querySelectorAll('[data-s]').forEach(e=>{e.textContent=R((Date.now()-e.dataset.s)*e.dataset.r)+' at risk'})}
+setInterval(tick,1000);
+function fail(e){$('conn').className='chip bad';$('conn').textContent='Cannot reach n8n';$('err').classList.add('on');$('err').innerHTML='<b>Cannot reach the backend ('+E(e.message)+').</b> Publish the n8n workflow and check that N8N_BASE at the top of this file is the production URL (it has /webhook/, not /webhook-test/).'}
+async function refresh(){try{render(await api('nidaan-state',{fn:'state'}));$('conn').className='chip ok';$('conn').textContent='Live';$('err').classList.remove('on')}catch(e){fail(e)}}
+async function loop(){clearTimeout(timer);if(Date.now()-last>15*60000){stopped=true;$('conn').textContent='Paused to save n8n runs';$('conn').className='chip';$('poll').textContent='Click anywhere to resume.';return}
+await refresh();const active=state&&state.events&&state.events.length&&Date.now()-state.events.slice(-1)[0].ts<60000;
+$('poll').textContent='Refreshes every '+(active?3:10)+' seconds.';timer=setTimeout(loop,active?3000:10000)}
+last=Date.now();loop();
 </script>
 </body>
 </html>
